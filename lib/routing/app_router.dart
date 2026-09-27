@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../data/app_initialization.dart';
-import '../domain/entities/expense.dart';
 import '../presentation/providers/auth_providers.dart';
 import '../presentation/screens/add_expense_screen.dart';
 import '../presentation/screens/auth_screen.dart';
@@ -61,7 +60,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: AppRouter.editExpensePathPattern,
         name: AppRouter.editExpenseName,
         builder: (_, state) =>
-            EditExpenseScreen(expense: state.extra as Expense),
+            EditExpenseScreen(expenseId: state.pathParameters['id']!),
       ),
     ],
     errorBuilder: (context, state) => Scaffold(
@@ -95,8 +94,8 @@ abstract final class AppRouter {
   /// Route pattern registered with go_router.
   static const editExpensePathPattern = '/expenses/:id/edit';
 
-  /// Concrete path for a given expense ID. The full [Expense] is passed
-  /// alongside as `extra` so the destination never has to re-fetch it.
+  /// Concrete path for a given expense ID. The edit screen fetches the
+  /// expense itself (see EditExpenseScreen), so nothing else needs passing.
   static String editExpensePath(String id) => '/expenses/$id/edit';
 }
 

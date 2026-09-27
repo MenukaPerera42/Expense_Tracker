@@ -14,6 +14,17 @@ final expenseListProvider = StreamProvider<List<Expense>>((ref) async* {
   yield* repository.watchExpenses();
 });
 
+/// A single expense by ID, fetched fresh each time the edit screen opens
+/// (autoDispose + family) rather than reused from wherever the caller
+/// navigated from — so editing always starts from the server's current
+/// data and can genuinely detect "this was deleted since the list loaded".
+final expenseByIdProvider = FutureProvider.autoDispose.family<Expense?, String>(
+  (ref, id) async {
+    final repository = await ref.watch(expenseRepositoryProvider.future);
+    return repository.getExpenseById(id);
+  },
+);
+
 final addExpenseControllerProvider =
     NotifierProvider.autoDispose<AddExpenseController, AsyncValue<void>>(
       AddExpenseController.new,
@@ -60,6 +71,63 @@ class AddExpenseController extends AutoDisposeNotifier<AsyncValue<void>> {
         updatedAt: now,
       );
       await repository.createExpense(expense);
+      state = const AsyncData(null);
+    } catch (error, stack) {
+      state = AsyncError(
+        error is AppException
+            ? error
+            : const AppException(
+                AppErrorCode.unknown,
+                'Something went wrong. Please try again.',
+              ),
+        stack,
+      );
+    }
+  }
+}
+
+final editExpenseControllerProvider =
+    NotifierProvider.autoDispose<EditExpenseController, AsyncValue<void>>(
+      EditExpenseController.new,
+    );
+
+/// Saves changes to an already-loaded [Expense]. The ID, owner and
+/// createdAt come from [original] rather than the form, so immutable
+/// fields can never be altered by editing; the repository additionally
+/// enforces this server-side (updateExpense strips id/userId/createdAt from
+/// the write and stamps updatedAt with a server timestamp).
+class EditExpenseController extends AutoDisposeNotifier<AsyncValue<void>> {
+  @override
+  AsyncValue<void> build() => const AsyncData(null);
+
+  Future<void> submit({
+    required Expense original,
+    required String title,
+    required String amount,
+    required ExpenseCategory category,
+    required DateTime date,
+    String? note,
+  }) async {
+    if (state.isLoading) return;
+    state = const AsyncLoading();
+    try {
+      final repository = await ref.read(expenseRepositoryProvider.future);
+      final trimmedNote = note?.trim();
+      final updated = Expense(
+        id: original.id,
+        userId: original.userId,
+        title: title.trim(),
+        amount: double.parse(amount.trim()),
+        category: category,
+        date: date,
+        note: (trimmedNote == null || trimmedNote.isEmpty) ? null : trimmedNote,
+        createdAt: original.createdAt,
+        // Placeholder to keep the entity's own invariant (updatedAt >=
+        // createdAt) satisfied; the repository replaces it with a server
+        // timestamp on write, same as create.
+        updatedAt: DateTime.now(),
+      );
+      await repository.updateExpense(updated);
       state = const AsyncData(null);
     } catch (error, stack) {
       state = AsyncError(

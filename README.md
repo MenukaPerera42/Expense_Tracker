@@ -1,8 +1,8 @@
 # Expense Tracker
 
 Android-only Flutter application using the existing Firebase project.
-Authentication, the expense data layer, Add Expense, and Expense History
-(view + delete) are implemented. Editing, search/filtering and summaries are
+Authentication, the expense data layer, and the full expense editor (add,
+edit, delete, history) are implemented. Search/filtering and summaries are
 not implemented yet.
 
 ## Run
@@ -59,18 +59,17 @@ theme state and UI selection, loading/error/success transitions, route recovery,
 compact/tablet layouts with enlarged text, authentication (validation, repository,
 state transitions, routing guards), the expense domain model and its
 serialization, the Firestore expense repository (CRUD, streaming, ownership
-isolation, error mapping), expense form validation, the Add Expense screen, and
-the Expense History screen (loaded/empty/error states, delete confirm/success/
-failure, and edit navigation). They do not verify a live Firebase connection.
-Launch on the configured Pixel emulator for that check.
+isolation, error mapping), expense form validation, the Add Expense screen, the
+Expense History screen (loaded/empty/error states, delete confirm/success/
+failure, edit navigation), and the expense editor (existing data loading,
+field changes, validation, successful/failed update, missing expense, loading
+state, and the unsaved-changes guard). They do not verify a live Firebase
+connection. Launch on the configured Pixel emulator for that check.
 
 ## Next modules
 
-1. Expense editor: a shared form (reusing Add Expense's fields/validation) that
-   loads an existing expense and calls `ExpenseRepository.updateExpense`,
-   replacing the current `EditExpenseScreen` placeholder.
-2. Search and category/date filtering over the same `expenseListProvider` stream.
-3. Monthly and category summaries and the expense chart (fl_chart).
+1. Search and category/date filtering over the same `expenseListProvider` stream.
+2. Monthly and category summaries and the expense chart (fl_chart).
 
 The UI shell needs no Console changes. Using Auth and Firestore requires the
 setup and rules described in docs/firebase-setup.md.
@@ -97,17 +96,16 @@ installed. See [Firebase setup](docs/firebase-setup.md) for exact remaining Cons
 steps, local emulator configuration, rule deployment, and testing limitations.
 Authentication UI is implemented. The expense data layer supports CRUD and streams.
 
-## Add Expense module
+## Add/Edit expense module
 
-`AddExpenseScreen` collects title, amount, category, date, and an optional note,
-then hands validated primitive values to `AddExpenseController`
-(`presentation/providers/expense_providers.dart`), which builds the `Expense`
-entity and calls `ExpenseRepository.createExpense`. The screen never imports
-Firestore or Firebase directly.
-
-Form-level policy (max lengths, the "no future dates" rule) lives in
-`domain/usecases/expense_validation.dart`, separate from the `Expense` entity's
-own structural invariants. Decisions specific to this module:
+`ExpenseForm` (`presentation/widgets/expense_form.dart`) is the single
+implementation of the expense fields — title, amount, category, date, optional
+note — shared by `AddExpenseScreen` and the expense editor, so validation, the
+"no future dates" rule, and the field layout live in exactly one place. It
+takes initial values, a `saving` flag, a submit label, and an `onSubmit`
+callback that only ever receives validated primitives; building an `Expense`
+and calling the repository is each owning screen's job, since create and
+update differ there.
 
 - **Amounts**: entry is restricted to digits and a single decimal point via an
   input formatter, and independently validated as a positive, finite number no
@@ -121,20 +119,48 @@ own structural invariants. Decisions specific to this module:
   check for any date that reaches submission another way.
 - **Category**: a single-select `ChoiceChip` row (`CategorySelector`) rather
   than a dropdown, so all nine categories and their icons stay visible and
-  reachable in one tap. Category icons are a presentation-layer mapping
-  (`iconForCategory`); the domain `ExpenseCategory` stores no UI concerns.
+  reachable in one tap.
 - **IDs**: `ExpenseRepository.newExpenseId()` allocates a Firestore
-  auto-generated ID locally (no network round trip) so the ID assigned to a
-  new expense is decided behind the repository abstraction, not in the UI.
+  auto-generated ID locally (no network round trip) for new expenses; edits
+  reuse the existing ID.
 - Title and note both use the field's own `maxLength`, which Flutter enforces
   by truncating input as it's typed; the corresponding validator checks are
-  therefore only exercised as unit tests; there is no realistic way to type
-  past the limit in the widget itself.
+  therefore only exercised as unit tests.
 
-Saving shows a spinner in place of the submit button's label and disables the
-button; on success a confirmation snackbar is shown and the screen pops back
-to the workspace; on failure the mapped `AppException` message is shown and the
-form stays open for another attempt.
+**Create** (`AddExpenseScreen` + `AddExpenseController`): builds a new
+`Expense` with a fresh ID and the signed-in user as owner, then calls
+`ExpenseRepository.createExpense`.
+
+**Edit** (`EditExpenseScreen` + `EditExpenseFormView` + `EditExpenseController`):
+the route only carries the expense ID (`/expenses/:id/edit`); the screen
+fetches the expense itself via `expenseByIdProvider` (an
+autoDispose family `FutureProvider` over `ExpenseRepository.getExpenseById`)
+rather than trusting an object passed along with the navigation, so it
+handles four states: loading (spinner), not found (`Expense` was deleted
+since the list was read — a status view with "Go back"), error (mapped
+message with Retry), and loaded (the form). `EditExpenseController.submit`
+takes the *original* `Expense` alongside the edited primitives and rebuilds
+it with the original's `id`, `userId`, and `createdAt` — the form and its
+"dirty" tracking never see these fields, so they cannot be altered by
+editing even in principle. `updatedAt` is refreshed locally to keep the
+entity's own invariant (`updatedAt >= createdAt`) satisfied; the repository
+already replaces it with a Firestore server timestamp on write, same as
+create, and already strips `id`/`userId`/`createdAt` from the update payload
+— no repository changes were needed for this module.
+
+**Unsaved changes**: `ExpenseForm` compares each field's current value
+against its initial value and reports "dirty" via `onDirtyChanged` — exact
+value comparison, so reverting a field back to its original value clears
+dirty again, but retyping the same amount in a different textual form (e.g.
+"24.0" for an initial "24") still reads as dirty; a practical, not
+perfect, approximation. Both `AddExpenseScreen` and the edit screen wrap
+their content in `PopScope`, blocking back navigation while dirty and
+showing a shared discard-confirmation dialog
+(`presentation/widgets/discard_changes_dialog.dart`) before allowing the pop.
+Both screens pop with plain `Navigator.pop` rather than go_router's
+`context.pop()`, since "return to whoever pushed me" doesn't need go_router
+specifically and this keeps the screens navigable from a plain `Navigator`
+in tests.
 
 ## Expense History module
 
@@ -172,13 +198,11 @@ empty, or a `ListView.builder` of `ExpenseListItem` cards otherwise.
   from the Firestore stream re-emitting without that document — the real
   "Update UI" step — rather than an optimistic local splice, so the list can
   never show a stale row Firestore has already deleted, or hide one it hasn't.
-- **Edit action**: pushes `/expenses/:id/edit` with the `Expense` passed as
-  `extra` (avoiding a re-fetch). The destination, `EditExpenseScreen`, is
-  currently a placeholder that confirms which expense was reached; the full
-  editor is the next module (see "Next modules").
+- **Edit action**: pushes `/expenses/:id/edit` (see "Add/Edit expense module"
+  above for what that route now does).
 
-Because `HomeScreen`'s body now depends on `expenseRepositoryProvider`, every
-test that reaches an authenticated Home screen — including the existing
-startup/theme/routing and authentication tests — now overrides it with a
-fake or mocked `ExpenseRepository`; otherwise resolving the provider would
-reach for a real Firebase instance the test never initialized.
+Because `HomeScreen`'s body depends on `expenseRepositoryProvider`, every test
+that reaches an authenticated Home screen — including the existing startup/
+theme/routing and authentication tests — overrides it with a fake or mocked
+`ExpenseRepository`; otherwise resolving the provider would reach for a real
+Firebase instance the test never initialized.

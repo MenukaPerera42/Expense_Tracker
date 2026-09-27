@@ -82,10 +82,8 @@ class ExpenseHistoryView extends ConsumerWidget {
               padding: const EdgeInsets.only(bottom: AppSpacing.small),
               child: ExpenseListItem(
                 expense: expense,
-                onEdit: () => context.push(
-                  AppRouter.editExpensePath(expense.id),
-                  extra: expense,
-                ),
+                onEdit: () =>
+                    context.push(AppRouter.editExpensePath(expense.id)),
               ),
             );
           },

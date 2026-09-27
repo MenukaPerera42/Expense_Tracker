@@ -251,17 +251,21 @@ void main() {
     },
   );
 
-  testWidgets('edit action navigates to the edit screen for that expense', (
-    tester,
-  ) async {
-    final expense = _expense(id: 'a', title: 'Team lunch', amount: 24.5);
-    when(
-      () => repository.watchExpenses(),
-    ).thenAnswer((_) => Stream.value([expense]));
-    await mount(tester);
-    await tester.tap(find.byTooltip('Edit expense'));
-    await tester.pumpAndSettle();
-    expect(find.widgetWithText(AppBar, 'Edit expense'), findsOneWidget);
-    expect(find.textContaining('Team lunch'), findsWidgets);
-  });
+  testWidgets(
+    'edit action navigates to the edit screen and loads that expense',
+    (tester) async {
+      final expense = _expense(id: 'a', title: 'Team lunch', amount: 24.5);
+      when(
+        () => repository.watchExpenses(),
+      ).thenAnswer((_) => Stream.value([expense]));
+      when(
+        () => repository.getExpenseById('a'),
+      ).thenAnswer((_) async => expense);
+      await mount(tester);
+      await tester.tap(find.byTooltip('Edit expense'));
+      await tester.pumpAndSettle();
+      expect(find.widgetWithText(AppBar, 'Edit expense'), findsOneWidget);
+      expect(find.text('Team lunch'), findsOneWidget);
+    },
+  );
 }
