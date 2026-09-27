@@ -3,16 +3,23 @@ import 'package:flutter/material.dart';
 import '../constants/app_spacing.dart';
 
 abstract final class AppTheme {
-  static const _seedColor = Color(0xFF146C60);
-  static const _cornerRadius = 16.0;
+  // Dark blue accent
+  static const _seedColor = Color(0xFF1565C0);
+  static const _cornerRadius = 20.0;
 
   static ThemeData light() => _build(Brightness.light);
   static ThemeData dark() => _build(Brightness.dark);
 
   static ThemeData _build(Brightness brightness) {
+    final isDark = brightness == Brightness.dark;
     final colors = ColorScheme.fromSeed(
       seedColor: _seedColor,
       brightness: brightness,
+      surface: isDark ? const Color(0xFF0D1B2A) : const Color(0xFFF2F5FA),
+      surfaceContainerLow:
+          isDark ? const Color(0xFF152236) : const Color(0xFFFFFFFF),
+      surfaceContainerHighest:
+          isDark ? const Color(0xFF1E3048) : const Color(0xFFDCE8F8),
     );
     final base = ThemeData(useMaterial3: true, colorScheme: colors);
     const shape = RoundedRectangleBorder(
@@ -36,10 +43,21 @@ abstract final class AppTheme {
     return base.copyWith(
       scaffoldBackgroundColor: colors.surface,
       textTheme: base.textTheme.copyWith(
+        headlineLarge: base.textTheme.headlineLarge?.copyWith(
+          fontWeight: FontWeight.w800,
+          letterSpacing: -0.5,
+        ),
+        headlineMedium: base.textTheme.headlineMedium?.copyWith(
+          fontWeight: FontWeight.w700,
+          letterSpacing: -0.5,
+        ),
         headlineSmall: base.textTheme.headlineSmall?.copyWith(
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w700,
         ),
         titleLarge: base.textTheme.titleLarge?.copyWith(
+          fontWeight: FontWeight.w600,
+        ),
+        titleMedium: base.textTheme.titleMedium?.copyWith(
           fontWeight: FontWeight.w600,
         ),
         bodyLarge: base.textTheme.bodyLarge?.copyWith(height: 1.5),
@@ -73,8 +91,6 @@ abstract final class AppTheme {
         shape: shape,
         clipBehavior: Clip.antiAlias,
       ),
-      // One consistent look for every SnackBar/toast in the app (success and
-      // error feedback alike) rather than each call site styling its own.
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
