@@ -2,8 +2,8 @@
 
 Android-only Flutter application using the existing Firebase project.
 Authentication, the expense data layer, the full expense editor (add, edit,
-delete, history), the main dashboard, and filtering/sorting of the history
-list are implemented. Free-text search is not implemented yet.
+delete, history), the main dashboard, and filtering/sorting/search of the
+history list are implemented.
 
 ## Run
 
@@ -65,16 +65,18 @@ failure, edit navigation), the expense editor (existing data loading, field
 changes, validation, successful/failed update, missing expense, loading state,
 and the unsaved-changes guard), the dashboard (month aggregation, month
 navigation, empty month, and that switching months never re-queries Firestore),
-and expense filtering/sorting (category, exact date, date range, month, all
-four sort orders, combined filters, clear filters, and an empty filtered
-result — at both the pure-model level and wired through the history screen).
+expense filtering/sorting (category, exact date, date range, month, all four
+sort orders, combined filters, clear filters, and an empty filtered result —
+at both the pure-model level and wired through the history screen), and
+expense search (title, note, case-insensitivity, whitespace tolerance, no
+result, combined with a category filter, combined with a date filter, clear
+search, and that the filtered list only updates once the debounce elapses).
 They do not verify a live Firebase connection. Launch on the configured Pixel
 emulator for that check.
 
 ## Next modules
 
-1. Free-text search over the same `expenseListProvider` stream.
-2. A real chart for the category breakdown (see "Dashboard module" below).
+1. A real chart for the category breakdown (see "Dashboard module" below).
 
 The UI shell needs no Console changes. Using Auth and Firestore requires the
 setup and rules described in docs/firebase-setup.md.
@@ -303,11 +305,14 @@ highest amount, or lowest amount — any combination at once.
   the same pattern as the dashboard's monthly summary. Changing a filter or
   the sort order only re-filters data already in memory.
 - **`ExpenseHistoryView`** now tells apart "no expenses at all" (checked
-  against the raw, unfiltered `expenseListProvider`) from "no expenses match
-  the current filters" (checked against `filteredExpenseListProvider`), so
-  the empty state and its call to action differ: "No expenses yet" → Add
-  expense, versus "No expenses match your filters" → Clear filters. The
-  filter bar itself only appears once there's at least one expense to filter.
+  against the raw, unfiltered `expenseListProvider`) from "nothing matches
+  the current search/filters" (checked against `filteredExpenseListProvider`,
+  which — see "Search module" below — folds in the search text too), so the
+  empty state and its call to action differ: "No expenses yet" → Add
+  expense, versus "No matching expenses" → a Clear action scoped to whatever
+  is actually active (Clear search / Clear filters / Clear search & filters).
+  The search field and filter bar only appear once there's at least one
+  expense to search or filter.
 - **`ExpenseFilterBar`** (`presentation/widgets/expense_filter_bar.dart`) is
   presentation-only — every chip reads or writes `expenseFilterProvider`
   through its controller, never `ExpenseFilterEngine` directly. The category
@@ -321,3 +326,47 @@ highest amount, or lowest amount — any combination at once.
   empty-filtered state and Clear filters recovers from it, and changing sort
   reorders the rendered rows) — the same combined/clear/empty-result
   behavior as the domain tests, this time proven through the actual UI.
+
+## Search module
+
+The expense history screen can also be searched by title or note, and the
+result respects whatever filters/sort are already active.
+
+- **Pure matching**: `ExpenseSearchEngine` (`domain/usecases/expense_search.dart`)
+  is a standalone function, independent of `ExpenseFilterEngine` — filtering
+  and searching are two separate concerns that happen to compose. `normalize`
+  lowercases, trims, and collapses runs of whitespace on *both* sides of the
+  comparison (the typed query and the stored title/note), so the match is
+  case-insensitive and tolerant of incidental extra spacing in either.
+  `test/domain/expense_search_test.dart` covers title matches, note matches,
+  case-insensitivity, whitespace tolerance, no result, clearing (an empty or
+  blank query returns the input unchanged), and — composed by chaining
+  `ExpenseFilterEngine.apply` into `ExpenseSearchEngine.apply` — a category
+  filter and a date filter each combined with a search term.
+- **Composes with filtering, not instead of it**: `filteredExpenseListProvider`
+  now applies `ExpenseFilterEngine.apply` first and `ExpenseSearchEngine.apply`
+  second, both against `expenseListProvider`'s already-loaded data via a new
+  `expenseSearchQueryProvider`/`ExpenseSearchQueryController`. Neither the
+  filter nor the search text can ever trigger another Firestore read — only
+  re-computation over data already in memory.
+- **Debounced, not query-per-keystroke**: `ExpenseSearchField`
+  (`presentation/widgets/expense_search_field.dart`) updates its own
+  `TextEditingController` immediately (so typing feels instant) but only
+  pushes the value into `expenseSearchQueryProvider` — and so only
+  re-filters the rendered list — 300ms after the user stops typing. There's
+  no Firestore query either way (this is a local, in-memory filter), but the
+  debounce still avoids rebuilding the filtered list on every keystroke, and
+  keeps the pattern consistent if search ever needs to reach the server.
+  `test/presentation/expense_search_field_test.dart` asserts the list is
+  still unfiltered immediately after typing and only updates once the
+  debounce elapses.
+- **Clear search vs. clear filters stay independent**: the search field's
+  own suffix icon clears only the search text; `ExpenseFilterBar`'s "Clear
+  filters" chip clears only the filters. The combined empty-result view in
+  `ExpenseHistoryView` offers a single action button, but its label and
+  effect adapt to what's actually active — Clear search, Clear filters, or
+  Clear search & filters — so there's always exactly one tap back to a
+  non-empty result whatever combination produced the empty state. Because
+  `ExpenseSearchField` only sets its own state from user input, it also
+  listens for external clears of `expenseSearchQueryProvider` (e.g. from that
+  shared button) so its own text box stays in sync.

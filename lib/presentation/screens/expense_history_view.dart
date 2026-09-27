@@ -7,6 +7,7 @@ import '../../routing/app_router.dart';
 import '../providers/expense_providers.dart';
 import '../widgets/expense_filter_bar.dart';
 import '../widgets/expense_list_item.dart';
+import '../widgets/expense_search_field.dart';
 import '../widgets/status_view.dart';
 
 /// The main workspace content: the signed-in user's expense history, newest
@@ -74,27 +75,55 @@ class ExpenseHistoryView extends ConsumerWidget {
             ),
           );
         }
+        final searchActive = ref.watch(
+          expenseSearchQueryProvider.select((query) => query.trim().isNotEmpty),
+        );
+        final filterActive = ref.watch(
+          expenseFilterProvider.select((filter) => filter.isActive),
+        );
+
         return Column(
           children: [
-            const Padding(
-              padding: EdgeInsets.fromLTRB(
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
                 AppSpacing.medium,
                 AppSpacing.medium,
                 AppSpacing.medium,
                 0,
               ),
-              child: ExpenseFilterBar(),
+              child: Column(
+                children: [
+                  const ExpenseSearchField(),
+                  const SizedBox(height: AppSpacing.small),
+                  const ExpenseFilterBar(),
+                ],
+              ),
             ),
             Expanded(
               child: expenses.isEmpty
                   ? StatusView(
                       icon: Icons.filter_alt_off_outlined,
-                      title: 'No expenses match your filters',
-                      message: 'Try a different category, date, or range.',
+                      title: 'No matching expenses',
+                      message:
+                          'Try a different search term, category, date, or range.',
                       action: FilledButton(
-                        onPressed: () =>
-                            ref.read(expenseFilterProvider.notifier).clear(),
-                        child: const Text('Clear filters'),
+                        onPressed: () {
+                          if (searchActive) {
+                            ref
+                                .read(expenseSearchQueryProvider.notifier)
+                                .clear();
+                          }
+                          if (filterActive) {
+                            ref.read(expenseFilterProvider.notifier).clear();
+                          }
+                        },
+                        child: Text(
+                          searchActive && filterActive
+                              ? 'Clear search & filters'
+                              : searchActive
+                              ? 'Clear search'
+                              : 'Clear filters',
+                        ),
                       ),
                     )
                   : ListView.builder(

@@ -100,14 +100,14 @@ void main() {
       await tester.tap(find.widgetWithText(ChoiceChip, 'Transport'));
       await tester.pumpAndSettle();
 
-      expect(find.text('No expenses match your filters'), findsOneWidget);
+      expect(find.text('No matching expenses'), findsOneWidget);
       expect(find.text('Lunch'), findsNothing);
 
       await tester.tap(find.widgetWithText(FilledButton, 'Clear filters'));
       await tester.pumpAndSettle();
 
       expect(find.text('Lunch'), findsOneWidget);
-      expect(find.text('No expenses match your filters'), findsNothing);
+      expect(find.text('No matching expenses'), findsNothing);
     },
   );
 

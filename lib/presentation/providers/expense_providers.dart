@@ -5,6 +5,7 @@ import '../../data/services/firebase_providers.dart';
 import '../../domain/entities/expense.dart';
 import '../../domain/entities/expense_category.dart';
 import '../../domain/usecases/expense_filter.dart';
+import '../../domain/usecases/expense_search.dart';
 import '../../domain/usecases/expense_summary.dart';
 import '../../domain/usecases/month_navigation.dart';
 import 'auth_providers.dart';
@@ -255,13 +256,35 @@ class ExpenseFilterController extends Notifier<ExpenseFilter> {
   void clear() => state = ExpenseFilter.initial;
 }
 
-/// [expenseListProvider]'s data with [expenseFilterProvider] applied. Purely
-/// a re-map of data already held by the single live listener — filtering or
-/// re-sorting never issues another Firestore read.
+/// The expense history screen's current search text (title/note substring
+/// match). Holds the literal typed text — normalization and matching are
+/// [ExpenseSearchEngine]'s job, not this provider's.
+final expenseSearchQueryProvider =
+    NotifierProvider<ExpenseSearchQueryController, String>(
+      ExpenseSearchQueryController.new,
+    );
+
+class ExpenseSearchQueryController extends Notifier<String> {
+  @override
+  String build() => '';
+
+  void setQuery(String query) => state = query;
+
+  void clear() => state = '';
+}
+
+/// [expenseListProvider]'s data with both [expenseFilterProvider] and
+/// [expenseSearchQueryProvider] applied — filter first, then search, so a
+/// search term always narrows within whatever the active filters already
+/// allow. Purely a re-map of data already held by the single live listener;
+/// changing the filter, the sort, or the search text never issues another
+/// Firestore read.
 final filteredExpenseListProvider = Provider<AsyncValue<List<Expense>>>((ref) {
   final filter = ref.watch(expenseFilterProvider);
+  final query = ref.watch(expenseSearchQueryProvider);
   final expenses = ref.watch(expenseListProvider);
-  return expenses.whenData(
-    (list) => ExpenseFilterEngine.apply(list, filter),
-  );
+  return expenses.whenData((list) {
+    final filtered = ExpenseFilterEngine.apply(list, filter);
+    return ExpenseSearchEngine.apply(filtered, query);
+  });
 });
