@@ -674,7 +674,7 @@ enum ChartTimeframe { day, week, month }
 
 class AnalyticsTimeframeController extends Notifier<ChartTimeframe> {
   @override
-  ChartTimeframe build() => ChartTimeframe.day;
+  ChartTimeframe build() => ChartTimeframe.week;
   void setTimeframe(ChartTimeframe t) => state = t;
 }
 

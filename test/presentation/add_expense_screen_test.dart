@@ -7,6 +7,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:expense_tracker/app.dart';
+import 'package:expense_tracker/routing/app_router.dart';
 import 'package:expense_tracker/core/errors/app_exception.dart';
 import 'package:expense_tracker/data/app_initialization.dart';
 import 'package:expense_tracker/data/services/firebase_providers.dart';
@@ -70,9 +71,8 @@ void main() {
   }
 
   Future<void> openAddExpense(WidgetTester tester) async {
-    // The dashboard's empty-month state also offers an "Add expense"
-    // button, so target the FAB specifically rather than by text alone.
-    await tester.tap(find.widgetWithText(FloatingActionButton, 'Add expense'));
+    // Exercise the persistent navigation bar's center Add button.
+    await tester.tap(find.byKey(const ValueKey('navigation-add-expense')));
     await tester.pumpAndSettle();
   }
 
@@ -83,6 +83,54 @@ void main() {
     await tester.tap(find.widgetWithText(FilledButton, 'Save expense'));
     await tester.pumpAndSettle();
   }
+
+  testWidgets('direct add URL returns home after saving', (tester) async {
+    when(() => repository.createExpense(any())).thenAnswer((_) async {});
+    final container = await mount(tester);
+    container.read(appRouterProvider).go(AppRouter.addExpensePath);
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Title'),
+      'Lunch',
+    );
+    await tester.enterText(find.widgetWithText(TextFormField, 'Amount'), '10');
+    await tester.tap(find.text('Food'));
+    await tapSave(tester);
+    expect(find.text('Add Expense'), findsNothing);
+    expect(
+      container.read(appRouterProvider).routeInformationProvider.value.uri.path,
+      '/',
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('back can keep or discard a new expense', (tester) async {
+    final container = await mount(tester);
+    await openAddExpense(tester);
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Title'),
+      'Lunch',
+    );
+    await tester.pump();
+    final context = tester.element(find.text('Add Expense'));
+    await Navigator.of(context).maybePop();
+    await Navigator.of(context).maybePop();
+    await tester.pumpAndSettle();
+    expect(find.byType(AlertDialog), findsOneWidget);
+    await tester.tap(find.text('Keep editing'));
+    await tester.pumpAndSettle();
+    expect(find.text('Lunch'), findsOneWidget);
+    await Navigator.of(context).maybePop();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Discard'));
+    await tester.pumpAndSettle();
+    expect(find.text('Add Expense'), findsNothing);
+    expect(
+      container.read(appRouterProvider).routeInformationProvider.value.uri.path,
+      '/',
+    );
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('empty title shows a validation message and blocks submission', (
     tester,
@@ -174,7 +222,9 @@ void main() {
       expect(saved.id, 'new-expense-id');
       expect(find.text('Expense saved.'), findsOneWidget);
       // Back on the home shell (its app bar title is unique to that screen).
-      expect(find.text('Expense Tracker'), findsOneWidget);
+      expect(find.text('Home'), findsOneWidget);
+      expect(find.text('Add Expense'), findsNothing);
+      expect(tester.takeException(), isNull);
     },
   );
 
@@ -202,7 +252,7 @@ void main() {
     );
     // Still on the Add Expense screen (its AppBar title is unique to it —
     // Home underneath also has an "Add expense" FAB/empty-state action).
-    expect(find.widgetWithText(AppBar, 'Add expense'), findsOneWidget);
+    expect(find.text('Add Expense'), findsOneWidget);
     expect(
       tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
       isNotNull,

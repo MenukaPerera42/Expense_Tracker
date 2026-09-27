@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/constants/app_spacing.dart';
+import '../../routing/close_expense_screen.dart';
 import '../providers/expense_providers.dart';
 import '../widgets/discard_changes_dialog.dart';
 import '../widgets/expense_form.dart';
@@ -10,9 +11,7 @@ import '../widgets/expense_form.dart';
 /// and validation live in [ExpenseForm]; this screen only owns saving state,
 /// success/error feedback, and the unsaved-changes guard.
 ///
-/// Uses plain [Navigator.pop] rather than go_router's `context.pop()` — it
-/// only ever needs to return to whichever screen pushed it, which Navigator
-/// already handles regardless of how that push happened.
+/// Returns to the caller, or home when opened directly.
 class AddExpenseScreen extends ConsumerStatefulWidget {
   const AddExpenseScreen({super.key});
 
@@ -23,6 +22,7 @@ class AddExpenseScreen extends ConsumerStatefulWidget {
 class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
   bool _dirty = false;
   bool _discardConfirmed = false;
+  bool _confirmingDiscard = false;
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +36,7 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
       if (previous?.isLoading == true && next.hasValue && !next.isLoading) {
         ScaffoldMessenger.of(context)
             .showSnackBar(const SnackBar(content: Text('Expense saved.')));
-        Navigator.of(context).pop();
+        closeExpenseScreen(context);
       } else if (next.hasError) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(expenseErrorMessage(next.error))),
@@ -47,12 +47,22 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
     return PopScope(
       canPop: !_dirty || _discardConfirmed,
       onPopInvokedWithResult: (didPop, _) async {
-        if (didPop) return;
-        final discard = await confirmDiscardChanges(context);
-        if (discard && context.mounted) {
+        if (didPop || _confirmingDiscard) return;
+        _confirmingDiscard = true;
+        // A blocked pop may be reported while Navigator is still locked.
+        WidgetsBinding.instance.addPostFrameCallback((_) async {
+          if (!mounted) return;
+          final discard = await confirmDiscardChanges(context);
+          if (!mounted) return;
+          _confirmingDiscard = false;
+          if (!discard) return;
           setState(() => _discardConfirmed = true);
-          Navigator.of(context).pop();
-        }
+          // Let PopScope register canPop before attempting navigation again.
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) closeExpenseScreen(context);
+          });
+        });
+        WidgetsBinding.instance.ensureVisualUpdate();
       },
       child: Scaffold(
         body: SafeArea(

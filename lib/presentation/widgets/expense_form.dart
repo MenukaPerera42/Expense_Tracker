@@ -109,7 +109,7 @@ class ExpenseFormState extends State<ExpenseForm> {
       // from ever offering an invalid choice in the first place.
       lastDate: now,
     );
-    if (picked != null) {
+    if (picked != null && mounted) {
       setState(() => _date = picked);
       _notifyDirty();
     }

@@ -262,7 +262,12 @@ class _PersistentNavBar extends StatelessWidget {
           Positioned(
             top: -24,
             child: GestureDetector(
-              onTap: () => context.go(AppRouter.addExpensePath),
+              key: const ValueKey('navigation-add-expense'),
+              onTap: () {
+                if (currentLocation != AppRouter.addExpensePath) {
+                  context.push(AppRouter.addExpensePath);
+                }
+              },
               child: Container(
                 width: 64,
                 height: 64,

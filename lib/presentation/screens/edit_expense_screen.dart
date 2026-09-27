@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/constants/app_spacing.dart';
+import '../../routing/close_expense_screen.dart';
 import '../../domain/entities/expense.dart';
 import '../providers/expense_providers.dart';
 import '../widgets/discard_changes_dialog.dart';
@@ -14,8 +15,7 @@ import '../widgets/status_view.dart';
 /// genuinely detect "this was deleted since the list loaded" rather than
 /// trusting stale data passed along with the navigation.
 ///
-/// Uses plain [Navigator.pop] rather than go_router's `context.pop()` — it
-/// only ever needs to return to whichever screen pushed it.
+/// Returns to the caller, or home when opened directly.
 class EditExpenseScreen extends ConsumerWidget {
   const EditExpenseScreen({super.key, required this.expenseId});
 
@@ -47,7 +47,7 @@ class EditExpenseScreen extends ConsumerWidget {
                 title: 'Expense not found',
                 message: 'This expense may have already been deleted.',
                 action: FilledButton(
-                  onPressed: () => Navigator.of(context).pop(),
+                  onPressed: () => closeExpenseScreen(context),
                   child: const Text('Go back'),
                 ),
               );
@@ -77,6 +77,7 @@ class EditExpenseFormView extends ConsumerStatefulWidget {
 class _EditExpenseFormViewState extends ConsumerState<EditExpenseFormView> {
   bool _dirty = false;
   bool _discardConfirmed = false;
+  bool _confirmingDiscard = false;
 
   /// Plain decimal text for the amount field — not currency-formatted —
   /// since it must round-trip through ExpenseValidation.amount unchanged.
@@ -99,7 +100,7 @@ class _EditExpenseFormViewState extends ConsumerState<EditExpenseFormView> {
       if (previous?.isLoading == true && next.hasValue && !next.isLoading) {
         ScaffoldMessenger.of(context)
             .showSnackBar(const SnackBar(content: Text('Changes saved.')));
-        Navigator.of(context).pop();
+        closeExpenseScreen(context);
       } else if (next.hasError) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(expenseErrorMessage(next.error))),
@@ -110,12 +111,22 @@ class _EditExpenseFormViewState extends ConsumerState<EditExpenseFormView> {
     return PopScope(
       canPop: !_dirty || _discardConfirmed,
       onPopInvokedWithResult: (didPop, _) async {
-        if (didPop) return;
-        final discard = await confirmDiscardChanges(context);
-        if (discard && context.mounted) {
+        if (didPop || _confirmingDiscard) return;
+        _confirmingDiscard = true;
+        // A blocked pop may be reported while Navigator is still locked.
+        WidgetsBinding.instance.addPostFrameCallback((_) async {
+          if (!mounted) return;
+          final discard = await confirmDiscardChanges(context);
+          if (!mounted) return;
+          _confirmingDiscard = false;
+          if (!discard) return;
           setState(() => _discardConfirmed = true);
-          Navigator.of(context).pop();
-        }
+          // Let PopScope register canPop before attempting navigation again.
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) closeExpenseScreen(context);
+          });
+        });
+        WidgetsBinding.instance.ensureVisualUpdate();
       },
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(AppSpacing.large),
