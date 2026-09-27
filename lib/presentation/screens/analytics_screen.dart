@@ -84,27 +84,24 @@ class _AnalyticsBody extends ConsumerWidget {
         _SummaryRow(summary: summary),
         const SizedBox(height: AppSpacing.large),
 
-        // ── Spending trend line chart ───────────────────────────────────
+        // ── Spending trend chart with creative Apple-style pill toggle ──
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             _SectionLabel(
               title: 'Spending Trend',
-              subtitle: timeframe == ChartTimeframe.month ? 'Last 6 months' : 'This month',
+              subtitle: timeframe == ChartTimeframe.day
+                  ? 'Daily breakdown'
+                  : timeframe == ChartTimeframe.week
+                      ? 'Weekly breakdown'
+                      : 'Last 6 months',
             ),
-            SegmentedButton<ChartTimeframe>(
-              segments: const [
-                ButtonSegment(value: ChartTimeframe.day, label: Text('D')),
-                ButtonSegment(value: ChartTimeframe.week, label: Text('W')),
-                ButtonSegment(value: ChartTimeframe.month, label: Text('M')),
-              ],
-              selected: {timeframe},
-              onSelectionChanged: (set) => ref.read(analyticsTimeframeProvider.notifier).setTimeframe(set.first),
-              showSelectedIcon: false,
-              style: SegmentedButton.styleFrom(
-                visualDensity: VisualDensity.compact,
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-              ),
+            _CreativeTimeframeToggle(
+              current: timeframe,
+              onChanged: (val) => ref
+                  .read(analyticsTimeframeProvider.notifier)
+                  .setTimeframe(val),
             ),
           ],
         ),
@@ -288,6 +285,101 @@ class _TrendCard extends StatelessWidget {
               .reduce((a, b) => a > b ? a : b);
           final maxY = maxVal > 0 ? maxVal * 1.25 : 1.0;
 
+          // ── Day view renders as clean Apple-style Bar Chart ───────────────
+          if (timeframe == ChartTimeframe.day) {
+            return SizedBox(
+              height: 180,
+              child: BarChart(
+                BarChartData(
+                  minY: 0,
+                  maxY: maxY,
+                  gridData: FlGridData(
+                    drawVerticalLine: false,
+                    horizontalInterval: maxY / 4,
+                    getDrawingHorizontalLine: (_) => FlLine(
+                      color: cs.outlineVariant.withOpacity(0.3),
+                      strokeWidth: 1,
+                    ),
+                  ),
+                  borderData: FlBorderData(show: false),
+                  titlesData: FlTitlesData(
+                    leftTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    rightTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    topTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 28,
+                        getTitlesWidget: (value, meta) {
+                          final i = value.round();
+                          if (i < 0 || i >= points.length) {
+                            return const SizedBox.shrink();
+                          }
+                          final pt = points[i];
+                          if (pt is DailySpendingPoint) {
+                            if (pt.day % 5 != 0 && pt.day != 1 && pt.day != points.length) {
+                              return const SizedBox.shrink();
+                            }
+                            return Padding(
+                              padding: const EdgeInsets.only(top: 8),
+                              child: Text(
+                                '${pt.day}',
+                                style: tt.labelSmall?.copyWith(
+                                  color: cs.onSurfaceVariant,
+                                  fontSize: 10,
+                                ),
+                              ),
+                            );
+                          }
+                          return const SizedBox.shrink();
+                        },
+                      ),
+                    ),
+                  ),
+                  barTouchData: BarTouchData(
+                    touchTooltipData: BarTouchTooltipData(
+                      getTooltipColor: (_) => cs.inverseSurface,
+                      getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                        final pt = points[group.x.toInt()];
+                        final dayStr = pt is DailySpendingPoint ? 'Day ${pt.day}\n' : '';
+                        return BarTooltipItem(
+                          '$dayStr${CurrencyConfig.defaultCurrency.format(rod.toY)}',
+                          tt.labelSmall!.copyWith(
+                            color: cs.onInverseSurface,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  barGroups: points.asMap().entries.map((entry) {
+                    final isHighlighted = entry.value.total > 0;
+                    return BarChartGroupData(
+                      x: entry.key,
+                      barRods: [
+                        BarChartRodData(
+                          toY: entry.value.total,
+                          color: isHighlighted ? cs.primary : cs.outlineVariant.withOpacity(0.3),
+                          width: points.length > 25 ? 5 : 8,
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(4),
+                          ),
+                        ),
+                      ],
+                    );
+                  }).toList(),
+                ),
+              ),
+            );
+          }
+
+          // ── Week & Month views render as Curved Line Chart ─────────────────
           final spots = points
               .asMap()
               .entries
@@ -324,7 +416,7 @@ class _TrendCard extends StatelessWidget {
                     sideTitles: SideTitles(
                       showTitles: true,
                       reservedSize: 28,
-                      interval: timeframe == ChartTimeframe.day ? 5 : 1,
+                      interval: 1,
                       getTitlesWidget: (value, meta) {
                         final i = value.round();
                         if (i < 0 || i >= points.length) {
@@ -333,10 +425,7 @@ class _TrendCard extends StatelessWidget {
                         
                         String label = '';
                         final pt = points[i];
-                        if (timeframe == ChartTimeframe.day && pt is DailySpendingPoint) {
-                          if (pt.day % 5 != 0 && pt.day != 1) return const SizedBox.shrink();
-                          label = '${pt.day}';
-                        } else if (timeframe == ChartTimeframe.week && pt is WeeklySpendingPoint) {
+                        if (timeframe == ChartTimeframe.week && pt is WeeklySpendingPoint) {
                           label = 'W${pt.week}';
                         } else if (timeframe == ChartTimeframe.month && pt is MonthlySpendingPoint) {
                           label = DateFormat.MMM().format(pt.month);
@@ -363,7 +452,6 @@ class _TrendCard extends StatelessWidget {
                           (s) {
                             final pt = points[s.x.toInt()];
                             String prefix = '';
-                            if (pt is DailySpendingPoint) prefix = 'Day ${pt.day}\n';
                             if (pt is WeeklySpendingPoint) prefix = 'Week ${pt.week}\n';
                             if (pt is MonthlySpendingPoint) prefix = '${DateFormat.MMMM().format(pt.month)}\n';
                             
@@ -593,3 +681,76 @@ class AnalyticsTimeframeController extends Notifier<ChartTimeframe> {
 final analyticsTimeframeProvider = NotifierProvider<AnalyticsTimeframeController, ChartTimeframe>(
   AnalyticsTimeframeController.new,
 );
+
+// ─── Creative Timeframe Segmented Toggle ──────────────────────────────────────
+
+class _CreativeTimeframeToggle extends StatelessWidget {
+  const _CreativeTimeframeToggle({
+    required this.current,
+    required this.onChanged,
+  });
+
+  final ChartTimeframe current;
+  final ValueChanged<ChartTimeframe> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final items = const [
+      (ChartTimeframe.day, 'Day'),
+      (ChartTimeframe.week, 'Week'),
+      (ChartTimeframe.month, 'Month'),
+    ];
+
+    return Container(
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: items.map((item) {
+          final isSelected = item.$1 == current;
+          return GestureDetector(
+            onTap: () => onChanged(item.$1),
+            behavior: HitTestBehavior.opaque,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeInOutCubic,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? const Color(0xFF0D47A1) // Dark Blue theme color
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: isSelected
+                    ? [
+                        BoxShadow(
+                          color: const Color(0xFF0D47A1).withOpacity(0.35),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ]
+                    : null,
+              ),
+              child: Text(
+                item.$2,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                  color: isSelected
+                      ? Colors.white
+                      : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+}
+
