@@ -94,66 +94,88 @@ class _AppearanceTile extends ConsumerWidget {
           color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
           borderRadius: BorderRadius.circular(22),
         ),
-        child: Row(
-          children: items.map((item) {
-            final isSelected = item.$1 == mode;
-            return Expanded(
-              child: GestureDetector(
-                onTap: () =>
-                    ref.read(themeModeProvider.notifier).setMode(item.$1),
-                behavior: HitTestBehavior.opaque,
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 220),
-                  curve: Curves.easeInOutCubic,
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? const Color(0xFF0D47A1) // Dark Blue theme color
-                        : Colors.transparent,
-                    borderRadius: BorderRadius.circular(18),
-                    boxShadow: isSelected
-                        ? [
-                            BoxShadow(
-                              color: const Color(0xFF0D47A1).withOpacity(0.35),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ]
-                        : null,
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        item.$2,
-                        size: 16,
-                        color: isSelected
-                            ? Colors.white
-                            : (isDark
-                                  ? const Color(0xFF94A3B8)
-                                  : const Color(0xFF64748B)),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        item.$3,
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: isSelected
-                              ? FontWeight.w700
-                              : FontWeight.w500,
-                          color: isSelected
-                              ? Colors.white
-                              : (isDark
-                                    ? const Color(0xFF94A3B8)
-                                    : const Color(0xFF64748B)),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final tabWidth = constraints.maxWidth / items.length;
+            final selectedIndex = items.indexWhere((e) => e.$1 == mode);
+
+            return Stack(
+              children: [
+                AnimatedPositioned(
+                  duration: const Duration(milliseconds: 250),
+                  curve: Curves.easeOutCubic,
+                  left: selectedIndex * tabWidth,
+                  top: 0,
+                  bottom: 0,
+                  width: tabWidth,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0D47A1),
+                      borderRadius: BorderRadius.circular(18),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF0D47A1).withOpacity(0.35),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-              ),
+                Row(
+                  children: items.map((item) {
+                    final isSelected = item.$1 == mode;
+                    return Expanded(
+                      child: GestureDetector(
+                        onTap: () => ref
+                            .read(themeModeProvider.notifier)
+                            .setMode(item.$1),
+                        behavior: HitTestBehavior.opaque,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              AnimatedSwitcher(
+                                duration: const Duration(milliseconds: 250),
+                                child: Icon(
+                                  item.$2,
+                                  key: ValueKey(isSelected),
+                                  size: 16,
+                                  color: isSelected
+                                      ? Colors.white
+                                      : (isDark
+                                            ? const Color(0xFF94A3B8)
+                                            : const Color(0xFF64748B)),
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              AnimatedDefaultTextStyle(
+                                duration: const Duration(milliseconds: 250),
+                                style: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontSize: 13,
+                                  fontWeight: isSelected
+                                      ? FontWeight.w700
+                                      : FontWeight.w500,
+                                  color: isSelected
+                                      ? Colors.white
+                                      : (isDark
+                                            ? const Color(0xFF94A3B8)
+                                            : const Color(0xFF64748B)),
+                                ),
+                                child: Text(item.$3),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ],
             );
-          }).toList(),
+          },
         ),
       ),
     );

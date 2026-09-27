@@ -283,8 +283,10 @@ class _PersistentNavBar extends StatelessWidget {
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF0D47A1).withOpacity(0.4),
-                      blurRadius: 12,
+                      color: isDark
+                          ? Colors.white.withOpacity(0.2)
+                          : const Color(0xFF0D47A1).withOpacity(0.4),
+                      blurRadius: isDark ? 16 : 12,
                       offset: const Offset(0, 4),
                     ),
                   ],

@@ -224,7 +224,9 @@ class _BalanceCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0D47A1).withOpacity(0.35),
+            color: isDark 
+                ? Colors.white.withOpacity(0.15) 
+                : const Color(0xFF0D47A1).withOpacity(0.35),
             blurRadius: 24,
             offset: const Offset(0, 10),
           ),
