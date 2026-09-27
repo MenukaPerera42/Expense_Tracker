@@ -96,7 +96,18 @@ class ExpenseFormState extends State<ExpenseForm> {
       _date != widget.initialDate ||
       _noteController.text != widget.initialNote;
 
-  void _notifyDirty() => widget.onDirtyChanged?.call(_isDirty);
+  bool get _isFormValid {
+    final titleFilled = _titleController.text.trim().isNotEmpty;
+    final amountFilled = _amountController.text.trim().isNotEmpty;
+    final categoryFilled = _category != null;
+    final dateValid = ExpenseValidation.date(_date) == null;
+    return titleFilled && amountFilled && categoryFilled && dateValid;
+  }
+
+  void _notifyDirty() {
+    setState(() {}); // Rebuild to update button state
+    widget.onDirtyChanged?.call(_isDirty);
+  }
 
   Future<void> _pickDate() async {
     final now = DateTime.now();
@@ -201,7 +212,7 @@ class ExpenseFormState extends State<ExpenseForm> {
           ),
           const SizedBox(height: AppSpacing.medium),
           FilledButton(
-            onPressed: saving ? null : _submit,
+            onPressed: saving || !_isFormValid ? null : _submit,
             child: saving
                 ? const SizedBox(
                     width: 24,

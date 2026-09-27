@@ -51,8 +51,11 @@ abstract final class AppTheme {
     );
 
     final border = OutlineInputBorder(
-      borderRadius: BorderRadius.circular(_cornerRadius),
-      borderSide: BorderSide(color: colors.outline),
+      borderRadius: BorderRadius.circular(16),
+      borderSide: BorderSide(
+        color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1),
+        width: 1.5,
+      ),
     );
 
     // Poppins-tuned text theme with Apple-like weights
@@ -145,23 +148,23 @@ abstract final class AppTheme {
         ),
         iconTheme: IconThemeData(color: colors.onSurface),
       ),
-      inputDecorationTheme: InputDecorationThemeData(
+      inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: colors.surfaceContainerLow,
+        fillColor: isDark ? const Color(0xFF1E293B) : Colors.white,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.medium,
-          vertical: 14,
+          vertical: 16, // slightly taller
         ),
         border: border,
         enabledBorder: border,
         focusedBorder: border.copyWith(
-          borderSide: BorderSide(color: colors.primary, width: 2),
+          borderSide: BorderSide(color: colors.primary, width: 1.5),
         ),
         errorBorder: border.copyWith(
-          borderSide: BorderSide(color: colors.error),
+          borderSide: BorderSide(color: colors.error, width: 1),
         ),
         focusedErrorBorder: border.copyWith(
-          borderSide: BorderSide(color: colors.error, width: 2),
+          borderSide: BorderSide(color: colors.error, width: 1.5),
         ),
         labelStyle: GoogleFonts.poppins(fontSize: 14, color: colors.onSurfaceVariant),
         hintStyle: GoogleFonts.poppins(fontSize: 14, color: colors.onSurfaceVariant),

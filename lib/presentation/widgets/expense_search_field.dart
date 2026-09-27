@@ -75,11 +75,11 @@ class _ExpenseSearchFieldState extends ConsumerState<ExpenseSearchField> {
       builder: (context, value, _) {
         return Container(
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+            color: isDark ? const Color(0xFF1E293B) : Colors.white,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-              width: 1,
+              color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1),
+              width: 1.5,
             ),
           ),
           child: TextField(
