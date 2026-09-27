@@ -14,10 +14,11 @@ class HomeScreen extends ConsumerWidget {
     final mode = ref.watch(themeModeProvider);
     final action = ref.watch(authActionProvider);
     ref.listen(authActionProvider, (previous, next) {
-      if (next.hasError)
+      if (next.hasError) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(authErrorMessage(next.error))));
+      }
     });
     return Scaffold(
       appBar: AppBar(

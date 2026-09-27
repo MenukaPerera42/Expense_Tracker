@@ -31,8 +31,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
 
   void _submit() {
     if (ref.read(authActionProvider).isLoading ||
-        !_form.currentState!.validate())
+        !_form.currentState!.validate()) {
       return;
+    }
     FocusScope.of(context).unfocus();
     final actions = ref.read(authActionProvider.notifier);
     if (widget.register) {

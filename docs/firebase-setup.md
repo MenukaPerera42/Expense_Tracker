@@ -38,7 +38,7 @@ Expense Tracker project, check these steps and skip anything already configured:
    indexes are currently needed; the supplied index file is empty.
 4. Rebuild and run on Android (`flutter run`) after adding the native plugins.
    Email/password does not need Google sign-in SHA fingerprints. Authentication
-   UI is a later module; this change supplies the data boundary only.
+   UI is available in the app; use a test account for a manual smoke test.
 
 No CLI deployment or Firebase Console changes were executed automatically.
 The local security rules have not been emulator-tested in this module; mocked
@@ -79,3 +79,27 @@ Official references:
 - https://firebase.google.com/docs/auth/flutter/start
 - https://firebase.google.com/docs/firestore/quickstart
 - https://firebase.google.com/docs/emulator-suite/connect_auth
+
+## Authentication module
+
+Login and registration UI are implemented. Registration collects a display name,
+email, password (minimum six characters), and matching confirmation. Firebase
+Console password policies may be stricter and are enforced by the backend.
+Account creation and display-name updates are separate SDK operations: if name
+saving fails, the app signs out and explains that the account already exists so
+the user can sign in instead of creating it again. The name can remain unset in
+that partial-success case; a future profile module can support editing it.
+
+`AuthRepository` exposes domain users, hiding Firebase from presentation.
+Riverpod listens for restored sessions and sign-in/sign-out events. Route guards
+hold the splash screen until initialization and auth state resolve, direct signed
+out users to Login, and redirect signed-in users away from Login/Register.
+Logout failures keep the current session and display a safe error with retry.
+
+Android Firebase Auth persists the session automatically across restarts. No
+passwords or tokens are copied into preferences or application files by our code.
+See https://firebase.google.com/docs/auth/flutter/start for native persistence.
+Enable Email/Password in the existing project's Authentication sign-in methods
+before using the forms; no new Firebase configuration or Firestore writes are
+required. Device restart persistence still needs a manual emulator/device check;
+unit tests simulate the SDK's restored-session event without real credentials.

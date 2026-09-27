@@ -1,8 +1,7 @@
 # Expense Tracker
 
 Android-only Flutter application using the existing Firebase project. This first
-module establishes the application foundation; authentication and expense
-features are not implemented yet.
+module establishes the application foundation; authentication is implemented; expense features are not implemented yet.
 
 ## Run
 
@@ -96,4 +95,4 @@ feature that uses them. Empty directories and speculative classes are omitted.
 Firebase Auth and Cloud Firestore dependencies and injectable data sources are now
 installed. See [Firebase setup](docs/firebase-setup.md) for exact remaining Console
 steps, local emulator configuration, rule deployment, and testing limitations.
-Authentication UI and expense writes are not implemented yet.
+Authentication UI is implemented. Expense writes are not implemented yet.

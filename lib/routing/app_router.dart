@@ -85,8 +85,9 @@ class _ProtectedHome extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final auth = ref.watch(authStateProvider);
-    if (auth.isLoading || auth.hasError || auth.value == null)
+    if (auth.isLoading || auth.hasError || auth.value == null) {
       return const SplashScreen();
+    }
     return const HomeScreen();
   }
 }
