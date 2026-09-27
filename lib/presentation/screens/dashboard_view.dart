@@ -136,8 +136,8 @@ class _DashboardBody extends StatelessWidget {
             ),
           ),
 
-        // Space for the floating nav bar
-        const SizedBox(height: AppSpacing.extraLarge * 2),
+        // Bottom padding so the last card clears the nav bar
+        const SizedBox(height: AppSpacing.extraLarge),
       ],
     );
   }
@@ -153,21 +153,35 @@ class _Header extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tt = Theme.of(context).textTheme;
     final cs = Theme.of(context).colorScheme;
+    final isLoggingOut = ref.watch(authActionProvider).isLoading;
+
     return Row(
       children: [
-        CircleAvatar(
-          radius: 22,
-          backgroundColor: cs.primaryContainer,
-          foregroundColor: cs.onPrimaryContainer,
-          child: Text(
-            displayName[0].toUpperCase(),
-            style: tt.titleMedium?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: cs.onPrimaryContainer,
+        // ── Avatar with gradient ring ────────────────────────────────────
+        Container(
+          padding: const EdgeInsets.all(2.5),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: const LinearGradient(
+              colors: [Color(0xFF1976D2), Color(0xFF42A5F5)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          child: CircleAvatar(
+            radius: 20,
+            backgroundColor: cs.primaryContainer,
+            child: Text(
+              displayName[0].toUpperCase(),
+              style: tt.titleMedium?.copyWith(
+                fontWeight: FontWeight.w800,
+                color: cs.onPrimaryContainer,
+              ),
             ),
           ),
         ),
         const SizedBox(width: AppSpacing.small),
+        // ── Greeting + name ─────────────────────────────────────────────
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -178,16 +192,60 @@ class _Header extends ConsumerWidget {
               ),
               Text(
                 displayName,
-                style: tt.titleMedium,
+                style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w700),
                 overflow: TextOverflow.ellipsis,
               ),
             ],
           ),
         ),
-        IconButton(
-          tooltip: 'Sign out',
-          onPressed: () => ref.read(authActionProvider.notifier).logout(),
-          icon: Icon(Icons.logout_rounded, color: cs.onSurfaceVariant),
+        // ── Creative logout button ───────────────────────────────────────
+        GestureDetector(
+          onTap: isLoggingOut
+              ? null
+              : () => ref.read(authActionProvider.notifier).logout(),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: isLoggingOut
+                  ? cs.surfaceContainerHighest
+                  : cs.errorContainer.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: isLoggingOut
+                    ? cs.outlineVariant
+                    : cs.error.withOpacity(0.35),
+                width: 1,
+              ),
+            ),
+            child: isLoggingOut
+                ? SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: cs.error,
+                    ),
+                  )
+                : Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.logout_rounded,
+                        size: 14,
+                        color: cs.error.withOpacity(0.8),
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        'Sign out',
+                        style: tt.labelSmall?.copyWith(
+                          color: cs.error.withOpacity(0.8),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+          ),
         ),
       ],
     );

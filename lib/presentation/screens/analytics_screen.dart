@@ -59,7 +59,7 @@ class _AnalyticsBody extends StatelessWidget {
         AppSpacing.medium,
         AppSpacing.medium,
         AppSpacing.medium,
-        AppSpacing.extraLarge * 2,
+        AppSpacing.extraLarge,
       ),
       children: [
         // Page title
