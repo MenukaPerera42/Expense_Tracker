@@ -59,7 +59,6 @@ class _AnalyticsBody extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tt = Theme.of(context).textTheme;
-    final cs = Theme.of(context).colorScheme;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(
@@ -146,8 +145,6 @@ class _SummaryRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
 
     double topAmount = 0;
     ExpenseCategory? topCat;
@@ -210,7 +207,7 @@ class _InfoTile extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: iconColor.withOpacity(0.12),
+              color: iconColor.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(icon, color: iconColor, size: 20),
@@ -263,7 +260,7 @@ class _TrendCard extends StatelessWidget {
           height: 160,
           child: Center(child: CircularProgressIndicator()),
         ),
-        error: (_, __) => const SizedBox(
+        error: (_, _) => const SizedBox(
           height: 160,
           child: Center(child: Icon(Icons.error_outline)),
         ),
@@ -297,7 +294,7 @@ class _TrendCard extends StatelessWidget {
                     drawVerticalLine: false,
                     horizontalInterval: maxY / 4,
                     getDrawingHorizontalLine: (_) => FlLine(
-                      color: cs.outlineVariant.withOpacity(0.3),
+                      color: cs.outlineVariant.withValues(alpha: 0.3),
                       strokeWidth: 1,
                     ),
                   ),
@@ -365,7 +362,7 @@ class _TrendCard extends StatelessWidget {
                       barRods: [
                         BarChartRodData(
                           toY: entry.value.total,
-                          color: isHighlighted ? cs.primary : cs.outlineVariant.withOpacity(0.3),
+                          color: isHighlighted ? cs.primary : cs.outlineVariant.withValues(alpha: 0.3),
                           width: points.length > 25 ? 5 : 8,
                           borderRadius: const BorderRadius.vertical(
                             top: Radius.circular(4),
@@ -397,7 +394,7 @@ class _TrendCard extends StatelessWidget {
                   drawVerticalLine: false,
                   horizontalInterval: maxY / 4,
                   getDrawingHorizontalLine: (_) => FlLine(
-                    color: cs.outlineVariant.withOpacity(0.3),
+                    color: cs.outlineVariant.withValues(alpha: 0.3),
                     strokeWidth: 1,
                   ),
                 ),
@@ -477,7 +474,7 @@ class _TrendCard extends StatelessWidget {
                     isStrokeCapRound: true,
                     dotData: FlDotData(
                       show: true,
-                      getDotPainter: (spot, _, __, ___) => FlDotCirclePainter(
+                      getDotPainter: (spot, _, _, _) => FlDotCirclePainter(
                         radius: 4,
                         color: cs.primary,
                         strokeColor: cs.surface,
@@ -490,8 +487,8 @@ class _TrendCard extends StatelessWidget {
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          cs.primary.withOpacity(0.20),
-                          cs.primary.withOpacity(0.00),
+                          cs.primary.withValues(alpha: 0.20),
+                          cs.primary.withValues(alpha: 0.00),
                         ],
                       ),
                     ),
@@ -549,7 +546,7 @@ class _CategoryBreakdownRow extends StatelessWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: barColor.withOpacity(0.12),
+              color: barColor.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
@@ -661,7 +658,7 @@ class _MonthChip extends ConsumerWidget {
             Icons.chevron_right,
             size: 24,
             color: MonthNavigation.isCurrentMonth(month)
-                ? cs.onSurfaceVariant.withOpacity(0.3)
+                ? cs.onSurfaceVariant.withValues(alpha: 0.3)
                 : cs.primary,
           ),
         ),
@@ -695,7 +692,6 @@ class _CreativeTimeframeToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final items = const [
@@ -731,7 +727,7 @@ class _CreativeTimeframeToggle extends StatelessWidget {
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF0D47A1).withOpacity(0.35),
+                        color: const Color(0xFF0D47A1).withValues(alpha: 0.35),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),

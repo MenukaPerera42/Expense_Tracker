@@ -8,7 +8,6 @@ import '../../core/config/currency_config.dart';
 import '../../core/constants/app_spacing.dart';
 import '../../domain/entities/expense.dart';
 import '../../domain/entities/expense_category.dart';
-import '../../domain/usecases/expense_chart_data.dart';
 import '../../domain/usecases/expense_summary.dart';
 import '../../domain/usecases/month_navigation.dart';
 import '../../routing/app_router.dart';
@@ -153,7 +152,6 @@ class _Header extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tt = Theme.of(context).textTheme;
     final cs = Theme.of(context).colorScheme;
-    final isLoggingOut = ref.watch(authActionProvider).isLoading;
 
     return Row(
       children: [
@@ -208,7 +206,6 @@ class _BalanceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -225,8 +222,8 @@ class _BalanceCard extends StatelessWidget {
         boxShadow: [
           BoxShadow(
             color: isDark 
-                ? Colors.white.withOpacity(0.05) 
-                : const Color(0xFF0D47A1).withOpacity(0.35),
+                ? Colors.white.withValues(alpha: 0.05)
+                : const Color(0xFF0D47A1).withValues(alpha: 0.35),
             blurRadius: isDark ? 12 : 24,
             offset: isDark ? const Offset(0, 4) : const Offset(0, 10),
           ),
@@ -244,7 +241,7 @@ class _BalanceCard extends StatelessWidget {
                   vertical: 4,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.15),
+                  color: Colors.white.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -255,7 +252,7 @@ class _BalanceCard extends StatelessWidget {
               const Spacer(),
               Icon(
                 Icons.trending_up_rounded,
-                color: Colors.white.withOpacity(0.7),
+                color: Colors.white.withValues(alpha: 0.7),
                 size: 20,
               ),
             ],
@@ -275,7 +272,7 @@ class _BalanceCard extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.medium),
           // Divider
-          Divider(color: Colors.white.withOpacity(0.15), height: 1),
+          Divider(color: Colors.white.withValues(alpha: 0.15), height: 1),
           const SizedBox(height: AppSpacing.medium),
           // Transactions count
           Row(
@@ -302,7 +299,7 @@ class _BalanceCard extends StatelessWidget {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.18),
+                    color: Colors.white.withValues(alpha: 0.18),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Row(
@@ -352,7 +349,7 @@ class _SpendingLineChart extends ConsumerWidget {
           height: 160,
           child: Center(child: CircularProgressIndicator()),
         ),
-        error: (_, __) => const SizedBox(height: 0),
+        error: (_, _) => const SizedBox(height: 0),
         data: (points) {
           if (points.isEmpty || points.every((p) => p.total <= 0)) {
             return SizedBox(
@@ -386,7 +383,7 @@ class _SpendingLineChart extends ConsumerWidget {
                   drawVerticalLine: false,
                   horizontalInterval: maxY / 4,
                   getDrawingHorizontalLine: (_) => FlLine(
-                    color: cs.outlineVariant.withOpacity(0.3),
+                    color: cs.outlineVariant.withValues(alpha: 0.3),
                     strokeWidth: 1,
                   ),
                 ),
@@ -449,7 +446,7 @@ class _SpendingLineChart extends ConsumerWidget {
                     isStrokeCapRound: true,
                     dotData: FlDotData(
                       show: true,
-                      getDotPainter: (spot, _, __, ___) => FlDotCirclePainter(
+                      getDotPainter: (spot, _, _, _) => FlDotCirclePainter(
                         radius: 4,
                         color: cs.primary,
                         strokeColor: cs.surface,
@@ -462,8 +459,8 @@ class _SpendingLineChart extends ConsumerWidget {
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          cs.primary.withOpacity(0.20),
-                          cs.primary.withOpacity(0.00),
+                          cs.primary.withValues(alpha: 0.20),
+                          cs.primary.withValues(alpha: 0.00),
                         ],
                       ),
                     ),
@@ -656,7 +653,7 @@ class _SectionHeader extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(title, style: tt.titleMedium),
-        if (trailing != null) trailing!,
+        ?trailing,
       ],
     );
   }
@@ -689,7 +686,7 @@ class _MonthChip extends ConsumerWidget {
             Icons.chevron_right,
             size: 20,
             color: MonthNavigation.isCurrentMonth(month)
-                ? cs.onSurfaceVariant.withOpacity(0.3)
+                ? cs.onSurfaceVariant.withValues(alpha: 0.3)
                 : cs.onSurfaceVariant,
           ),
         ),
