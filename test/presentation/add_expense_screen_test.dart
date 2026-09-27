@@ -69,7 +69,9 @@ void main() {
   }
 
   Future<void> openAddExpense(WidgetTester tester) async {
-    await tester.tap(find.text('Add expense'));
+    // The dashboard's empty-month state also offers an "Add expense"
+    // button, so target the FAB specifically rather than by text alone.
+    await tester.tap(find.widgetWithText(FloatingActionButton, 'Add expense'));
     await tester.pumpAndSettle();
   }
 
@@ -184,7 +186,9 @@ void main() {
       find.text('The service is temporarily unavailable. Try again.'),
       findsOneWidget,
     );
-    expect(find.text('Add expense'), findsOneWidget);
+    // Still on the Add Expense screen (its AppBar title is unique to it —
+    // Home underneath also has an "Add expense" FAB/empty-state action).
+    expect(find.widgetWithText(AppBar, 'Add expense'), findsOneWidget);
     expect(
       tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
       isNotNull,

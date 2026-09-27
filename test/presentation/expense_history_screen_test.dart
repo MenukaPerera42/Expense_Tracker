@@ -16,6 +16,7 @@ import 'package:expense_tracker/domain/entities/expense.dart';
 import 'package:expense_tracker/domain/entities/expense_category.dart';
 import 'package:expense_tracker/domain/repositories/expense_repository.dart';
 import 'package:expense_tracker/presentation/providers/auth_providers.dart';
+import 'package:expense_tracker/routing/app_router.dart';
 
 class MockExpenseRepository extends Mock implements ExpenseRepository {}
 
@@ -69,6 +70,10 @@ void main() {
         child: const ExpenseTrackerApp(),
       ),
     );
+    await tester.pumpAndSettle();
+    // Home's body is now the dashboard (see DashboardView); these tests are
+    // about the full history list, which lives at its own route.
+    container.read(appRouterProvider).go(AppRouter.expenseHistoryPath);
     await tester.pumpAndSettle();
     return container;
   }

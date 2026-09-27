@@ -6,7 +6,7 @@ import '../../core/constants/app_constants.dart';
 import '../providers/theme_mode_provider.dart';
 import '../providers/auth_providers.dart';
 import '../../routing/app_router.dart';
-import 'expense_history_view.dart';
+import 'dashboard_view.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -55,7 +55,7 @@ class HomeScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: const SafeArea(child: ExpenseHistoryView()),
+      body: const SafeArea(child: DashboardView()),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.push(AppRouter.addExpensePath),
         icon: const Icon(Icons.add),

@@ -7,6 +7,7 @@ import '../presentation/providers/auth_providers.dart';
 import '../presentation/screens/add_expense_screen.dart';
 import '../presentation/screens/auth_screen.dart';
 import '../presentation/screens/edit_expense_screen.dart';
+import '../presentation/screens/expense_history_screen.dart';
 import '../presentation/screens/home_screen.dart';
 import '../presentation/screens/splash_screen.dart';
 import '../presentation/widgets/status_view.dart';
@@ -62,6 +63,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (_, state) =>
             EditExpenseScreen(expenseId: state.pathParameters['id']!),
       ),
+      GoRoute(
+        path: AppRouter.expenseHistoryPath,
+        name: AppRouter.expenseHistoryName,
+        builder: (_, _) => const ExpenseHistoryScreen(),
+      ),
     ],
     errorBuilder: (context, state) => Scaffold(
       body: SafeArea(
@@ -90,6 +96,8 @@ abstract final class AppRouter {
   static const addExpensePath = '/expenses/add';
   static const addExpenseName = 'addExpense';
   static const editExpenseName = 'editExpense';
+  static const expenseHistoryPath = '/expenses';
+  static const expenseHistoryName = 'expenseHistory';
 
   /// Route pattern registered with go_router.
   static const editExpensePathPattern = '/expenses/:id/edit';

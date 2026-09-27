@@ -130,7 +130,7 @@ void main() {
       addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
       await mount(tester);
       await tester.pumpAndSettle();
-      expect(find.text('No expenses yet'), findsOneWidget);
+      expect(find.textContaining('No expenses in'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   }

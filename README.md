@@ -1,9 +1,9 @@
 # Expense Tracker
 
 Android-only Flutter application using the existing Firebase project.
-Authentication, the expense data layer, and the full expense editor (add,
-edit, delete, history) are implemented. Search/filtering and summaries are
-not implemented yet.
+Authentication, the expense data layer, the full expense editor (add, edit,
+delete, history), and the main dashboard are implemented. Search/filtering
+is not implemented yet.
 
 ## Run
 
@@ -61,15 +61,17 @@ state transitions, routing guards), the expense domain model and its
 serialization, the Firestore expense repository (CRUD, streaming, ownership
 isolation, error mapping), expense form validation, the Add Expense screen, the
 Expense History screen (loaded/empty/error states, delete confirm/success/
-failure, edit navigation), and the expense editor (existing data loading,
-field changes, validation, successful/failed update, missing expense, loading
-state, and the unsaved-changes guard). They do not verify a live Firebase
-connection. Launch on the configured Pixel emulator for that check.
+failure, edit navigation), the expense editor (existing data loading, field
+changes, validation, successful/failed update, missing expense, loading state,
+and the unsaved-changes guard), and the dashboard (month aggregation, month
+navigation, empty month, and that switching months never re-queries Firestore).
+They do not verify a live Firebase connection. Launch on the configured Pixel
+emulator for that check.
 
 ## Next modules
 
 1. Search and category/date filtering over the same `expenseListProvider` stream.
-2. Monthly and category summaries and the expense chart (fl_chart).
+2. A real chart for the category breakdown (see "Dashboard module" below).
 
 The UI shell needs no Console changes. Using Auth and Firestore requires the
 setup and rules described in docs/firebase-setup.md.
@@ -205,4 +207,64 @@ Because `HomeScreen`'s body depends on `expenseRepositoryProvider`, every test
 that reaches an authenticated Home screen — including the existing startup/
 theme/routing and authentication tests — overrides it with a fake or mocked
 `ExpenseRepository`; otherwise resolving the provider would reach for a real
-Firebase instance the test never initialized.
+Firebase instance the test never initialized. The full, unfiltered history
+list itself moved to its own route (see "Dashboard module" below); `HomeScreen`
+now shows `DashboardView`, and `ExpenseHistoryView` is reused as-is inside a
+thin `ExpenseHistoryScreen` at `/expenses`.
+
+## Dashboard module
+
+`DashboardView` (`presentation/screens/dashboard_view.dart`) is now Home's
+body: a greeting, a month selector, the selected month's total and
+transaction count, a per-category breakdown, and its most recent expenses,
+with a "View all" link to the full history at `/expenses`.
+
+- **No extra Firestore reads**: `monthlyExpenseSummaryProvider` is a plain
+  synchronous `Provider<AsyncValue<MonthlyExpenseSummary>>` — not a new
+  stream or future — that combines `selectedMonthProvider` (the month
+  currently shown) with the data already held by `expenseListProvider`, the
+  same single live listener the history screen uses. Changing the selected
+  month only re-aggregates data already in memory; a widget test
+  (`dashboard_view_test.dart`) asserts `watchExpenses()` is called exactly
+  once even after navigating across several months, to make this concrete
+  rather than just asserted in prose. Pull-to-refresh is the one action that
+  does re-subscribe (`ref.refresh(expenseListProvider.future)`), since that's
+  the explicit "get me the latest" gesture.
+- **Domain-level aggregation**: `ExpenseSummaryCalculator.summarize`
+  (`domain/usecases/expense_summary.dart`) is a pure function — no widgets,
+  no providers — so the monthly total, transaction count, category totals,
+  and recent-expense ordering are each unit tested directly
+  (`test/domain/expense_summary_test.dart`) without pumping a widget tree.
+  Month membership is decided by `expense.date` — never `createdAt` or
+  `updatedAt` — per the requirement that the monthly total reflect when the
+  money was spent, not when it was recorded. `recentExpenses` is explicitly
+  re-sorted newest-first inside `summarize` rather than trusted from the
+  input list's order, so it stays correct however the caller's list is
+  ordered, and is capped at `ExpenseSummaryCalculator.recentLimit` (5).
+- **Month navigation**: `MonthNavigation` (`domain/usecases/month_navigation.dart`)
+  is a second pure class — `normalize`, `previous`, `next`, `isCurrentMonth` —
+  backing `SelectedMonthController`. `next` is capped at the current month
+  (it's a no-op once there), and `_MonthSelector` also disables the "next"
+  button outright at that point, rather than leaving it clickable with no
+  effect, so it's visibly clear there's nothing later to move to yet.
+- **States**: `monthlyExpenseSummaryProvider`'s `AsyncValue` still carries
+  loading and error from the underlying `expenseListProvider`, so
+  `DashboardView` handles those the same way the rest of the app does
+  (spinner; `StatusView` with Retry). A month with no expenses shows a
+  distinct empty state (`_EmptyMonth`, "No expenses in \<Month Year\>") with
+  its own "Add expense" action, instead of an empty category list and recent
+  list.
+- **Category summary doubles as the chart**: `CategorySummaryList`
+  (`presentation/widgets/category_summary_list.dart`) renders each category
+  sorted by spend with a proportional `LinearProgressIndicator`. This is a
+  deliberate, disclosed stand-in for a real chart — neither the dashboard's
+  requirements nor its test list call for a specific charting library, so
+  `fl_chart` has not been added yet; swapping this widget for a chart later
+  needs no change to the summary data it's given.
+- **Greeting**: `greetingForHour` (`core/utils/greeting.dart`) is a pure,
+  unit-testable helper (morning/afternoon/evening/night) rather than logic
+  inlined in the widget; the dashboard adds the signed-in user's name when
+  `AuthUser.name` is available.
+
+`HomeScreen`'s FAB stays visible over the dashboard exactly as it did over
+the history list, so "Add expense" is reachable from Home either way.

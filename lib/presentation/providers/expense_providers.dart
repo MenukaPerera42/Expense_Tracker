@@ -4,6 +4,8 @@ import '../../core/errors/app_exception.dart';
 import '../../data/services/firebase_providers.dart';
 import '../../domain/entities/expense.dart';
 import '../../domain/entities/expense_category.dart';
+import '../../domain/usecases/expense_summary.dart';
+import '../../domain/usecases/month_navigation.dart';
 import 'auth_providers.dart';
 
 /// Newest-first live view of the signed-in user's expenses. A plain
@@ -191,3 +193,35 @@ class DeleteExpenseController extends Notifier<Map<String, AsyncValue<void>>> {
 String expenseErrorMessage(Object? error) => error is AppException
     ? error.message
     : 'Something went wrong. Please try again.';
+
+/// The month currently shown on the dashboard.
+final selectedMonthProvider =
+    NotifierProvider<SelectedMonthController, DateTime>(
+      SelectedMonthController.new,
+    );
+
+/// Defaults to the current month and only ever holds a normalized
+/// (first-of-month) value. Navigation is capped so the dashboard can never
+/// be pushed into a month that hasn't happened yet.
+class SelectedMonthController extends Notifier<DateTime> {
+  @override
+  DateTime build() => MonthNavigation.normalize(DateTime.now());
+
+  void previousMonth() => state = MonthNavigation.previous(state);
+
+  void nextMonth() => state = MonthNavigation.next(state);
+}
+
+/// The dashboard's monthly summary for [selectedMonthProvider], derived
+/// entirely from [expenseListProvider]'s already-loaded data. This is a
+/// plain synchronous [Provider] — not a new stream or future — so changing
+/// the selected month only re-aggregates data already held in memory and
+/// never triggers another Firestore read.
+final monthlyExpenseSummaryProvider =
+    Provider<AsyncValue<MonthlyExpenseSummary>>((ref) {
+      final month = ref.watch(selectedMonthProvider);
+      final expenses = ref.watch(expenseListProvider);
+      return expenses.whenData(
+        (list) => ExpenseSummaryCalculator.summarize(list, month: month),
+      );
+    });
