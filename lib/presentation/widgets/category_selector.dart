@@ -109,7 +109,9 @@ class _CategoryPill extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final activeColor = theme.colorScheme.primary;
+
+    // Always use deep blue for selected state so the white text is highly visible!
+    const activeColor = Color(0xFF0D47A1);
 
     // Unselected colors matching the new Apple-style inputs
     final unselectedBg = isDark ? const Color(0xFF1E293B) : Colors.white;

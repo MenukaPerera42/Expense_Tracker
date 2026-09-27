@@ -284,10 +284,10 @@ class _PersistentNavBar extends StatelessWidget {
                   boxShadow: [
                     BoxShadow(
                       color: isDark
-                          ? Colors.white.withOpacity(0.2)
+                          ? Colors.white.withOpacity(0.06)
                           : const Color(0xFF0D47A1).withOpacity(0.4),
-                      blurRadius: isDark ? 16 : 12,
-                      offset: const Offset(0, 4),
+                      blurRadius: isDark ? 8 : 12,
+                      offset: isDark ? const Offset(0, 2) : const Offset(0, 4),
                     ),
                   ],
                 ),
