@@ -35,7 +35,10 @@ abstract final class FirebaseErrorMapper {
       AppErrorCode.permissionDenied,
       'You do not have permission to access this data.',
     ),
-    'unauthenticated' || 'requires-recent-login' => const AppException(
+    'unauthenticated' ||
+    'user-token-expired' ||
+    'invalid-user-token' ||
+    'requires-recent-login' => const AppException(
       AppErrorCode.unauthenticated,
       'Please sign in again.',
     ),

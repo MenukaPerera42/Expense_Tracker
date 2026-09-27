@@ -86,7 +86,7 @@ void main() {
       when(() => user.uid).thenReturn('id');
       when(() => user.email).thenReturn('a@b.com');
       when(() => user.displayName).thenReturn('Alex');
-      when(auth.authStateChanges)
+      when(auth.userChanges)
           .thenAnswer((_) => Stream.fromIterable([user, null]));
       final events = await repository.watchUser().toList();
       expect(events.first!.id, 'id');

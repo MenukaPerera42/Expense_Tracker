@@ -6,7 +6,7 @@ class FirebaseAuthRepository implements AuthRepository {
   FirebaseAuthRepository(this._source);
   final AuthDataSource _source;
   @override
-  Stream<AuthUser?> watchUser() => _source.authStateChanges().map(
+  Stream<AuthUser?> watchUser() => _source.userChanges().map(
     (user) => user == null
         ? null
         : AuthUser(id: user.uid, email: user.email, name: user.displayName),
@@ -31,4 +31,21 @@ class FirebaseAuthRepository implements AuthRepository {
 
   @override
   Future<void> logout() => _source.signOut();
+  @override
+  Future<void> updateName(String name) => _source.updateName(name);
+  @override
+  Future<void> changeEmail({
+    required String email,
+    required String currentPassword,
+  }) => _source.changeEmail(email: email, currentPassword: currentPassword);
+  @override
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) => _source.changePassword(
+    currentPassword: currentPassword,
+    newPassword: newPassword,
+  );
+  @override
+  Future<void> refreshUser() => _source.refreshUser();
 }

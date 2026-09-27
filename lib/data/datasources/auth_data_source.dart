@@ -54,4 +54,79 @@ class AuthDataSource {
   Future<void> resetPassword(String email) => FirebaseErrorMapper.guard(
     () => _auth.sendPasswordResetEmail(email: email.trim()),
   );
+  Stream<User?> userChanges() =>
+      FirebaseErrorMapper.guardStream(_auth.userChanges);
+
+  User _requireUser() =>
+      _auth.currentUser ??
+      (throw const AppException(
+        AppErrorCode.unauthenticated,
+        'Please sign in again.',
+      ));
+
+  void _checkSession(User user) {
+    if (_auth.currentUser?.uid != user.uid) {
+      throw const AppException(
+        AppErrorCode.unauthenticated,
+        'Please sign in again.',
+      );
+    }
+  }
+
+  Future<void> updateName(String name) => FirebaseErrorMapper.guard(() async {
+    final user = _requireUser();
+    await user.updateDisplayName(name.trim());
+    _checkSession(user);
+  });
+
+  Future<User> _reauthenticate(String password) async {
+    final user = _requireUser();
+    final email = user.email;
+    if (email == null) {
+      throw const AppException(
+        AppErrorCode.invalidCredentials,
+        'Sign in with an email and password to make this change.',
+      );
+    }
+    try {
+      await user.reauthenticateWithCredential(
+        EmailAuthProvider.credential(email: email, password: password),
+      );
+    } on FirebaseAuthException catch (error) {
+      if (error.code == 'wrong-password' ||
+          error.code == 'invalid-credential') {
+        throw const AppException(
+          AppErrorCode.invalidCredentials,
+          'Your current password is incorrect. Please try again.',
+        );
+      }
+      rethrow;
+    }
+    _checkSession(user);
+    return user;
+  }
+
+  Future<void> changeEmail({
+    required String email,
+    required String currentPassword,
+  }) => FirebaseErrorMapper.guard(() async {
+    final user = await _reauthenticate(currentPassword);
+    await user.verifyBeforeUpdateEmail(email.trim());
+    _checkSession(user);
+  });
+
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) => FirebaseErrorMapper.guard(() async {
+    final user = await _reauthenticate(currentPassword);
+    await user.updatePassword(newPassword);
+    _checkSession(user);
+  });
+
+  Future<void> refreshUser() => FirebaseErrorMapper.guard(() async {
+    final user = _requireUser();
+    await user.reload();
+    _checkSession(user);
+  });
 }

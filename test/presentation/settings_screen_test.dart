@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:expense_tracker/domain/entities/auth_user.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -20,6 +21,11 @@ void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues({});
     authRepository = MockAuthRepository();
+    when(authRepository.watchUser).thenAnswer(
+      (_) => Stream.value(
+        const AuthUser(id: 'user', name: 'Alex', email: 'alex@gmail.com'),
+      ),
+    );
     when(() => authRepository.logout()).thenAnswer((_) async {});
   });
 
@@ -108,6 +114,12 @@ void main() {
       tester,
     ) async {
       await mount(tester);
+      await tester.scrollUntilVisible(
+        find.widgetWithText(ListTile, 'Log out'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(ListTile, 'Log out'));
       await tester.pumpAndSettle();
       expect(find.text('Log out?'), findsOneWidget);
@@ -120,6 +132,12 @@ void main() {
 
     testWidgets('cancelling the dialog does not log out', (tester) async {
       await mount(tester);
+      await tester.scrollUntilVisible(
+        find.widgetWithText(ListTile, 'Log out'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(ListTile, 'Log out'));
       await tester.pumpAndSettle();
 
@@ -133,6 +151,12 @@ void main() {
   group('app information', () {
     testWidgets('shows the app name and version', (tester) async {
       await mount(tester);
+      await tester.scrollUntilVisible(
+        find.text('Expense Tracker'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.pumpAndSettle();
       expect(find.text('Expense Tracker'), findsOneWidget);
       expect(find.textContaining('Version'), findsOneWidget);
     });

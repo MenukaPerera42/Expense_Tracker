@@ -56,6 +56,26 @@ class FakeAuthRepository implements AuthRepository {
     _controller.add(null);
   }
 
+  @override
+  Future<void> updateName(String name) async {
+    final user = _currentUser!;
+    _currentUser = AuthUser(id: user.id, name: name.trim(), email: user.email);
+    _controller.add(_currentUser);
+  }
+
+  @override
+  Future<void> changeEmail({
+    required String email,
+    required String currentPassword,
+  }) async {}
+  @override
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {}
+  @override
+  Future<void> refreshUser() async => _controller.add(_currentUser);
+
   void dispose() {
     _controller.close();
   }

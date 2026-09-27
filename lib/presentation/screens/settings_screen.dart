@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/config/currency_config.dart';
 import '../../core/constants/app_constants.dart';
 import '../providers/auth_providers.dart';
+import '../providers/account_settings_provider.dart';
+import '../widgets/account_settings_tiles.dart';
 import '../providers/currency_preference_provider.dart';
 import '../providers/theme_mode_provider.dart';
 
@@ -35,6 +37,7 @@ class SettingsScreen extends ConsumerWidget {
             const _CurrencyTile(),
             const Divider(height: 1),
             const _SectionHeader('Account'),
+            const AccountSettingsTiles(),
             const _LogoutTile(),
             const Divider(height: 1),
             const _SectionHeader('About'),
@@ -133,8 +136,10 @@ class _AppearanceTile extends ConsumerWidget {
                         behavior: HitTestBehavior.opaque,
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 10),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
+                          child: Wrap(
+                            alignment: WrapAlignment.center,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            runSpacing: 4,
                             children: [
                               AnimatedSwitcher(
                                 duration: const Duration(milliseconds: 250),
@@ -246,7 +251,9 @@ class _LogoutTile extends ConsumerWidget {
         'Log out',
         style: TextStyle(color: Theme.of(context).colorScheme.error),
       ),
-      onTap: action.isLoading ? null : () => _confirmLogout(context, ref),
+      onTap: action.isLoading || ref.watch(accountSettingsProvider).isLoading
+          ? null
+          : () => _confirmLogout(context, ref),
     );
   }
 
