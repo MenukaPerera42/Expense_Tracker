@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "137132762852",
+    "project_id": "expense-tracker-de695",
+    "storage_bucket": "expense-tracker-de695.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:137132762852:android:2df442506500c939ef6ef1",
+        "android_client_info": {
+          "package_name": "com.menuka.expense_tracker"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDxZCoW3cuqdRXHQulNTm-u7HjGbsOzYRM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
