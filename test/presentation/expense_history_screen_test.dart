@@ -98,9 +98,8 @@ void main() {
         category: ExpenseCategory.transport,
         date: DateTime.utc(2026, 9, 24),
       );
-      when(
-        () => repository.watchExpenses(),
-      ).thenAnswer((_) => Stream.value([withNote, withoutNote]));
+      when(() => repository.watchExpenses())
+          .thenAnswer((_) => Stream.value([withNote, withoutNote]));
       await mount(tester);
 
       expect(find.text('Team lunch'), findsOneWidget);
@@ -135,9 +134,8 @@ void main() {
   testWidgets('empty state offers an Add Expense action that opens the form', (
     tester,
   ) async {
-    when(
-      () => repository.watchExpenses(),
-    ).thenAnswer((_) => Stream.value(const []));
+    when(() => repository.watchExpenses())
+        .thenAnswer((_) => Stream.value(const []));
     await mount(tester);
     expect(find.text('No expenses yet'), findsOneWidget);
     await tester.tap(find.widgetWithText(FilledButton, 'Add expense'));
@@ -173,9 +171,8 @@ void main() {
     tester,
   ) async {
     final expense = _expense(id: 'a', title: 'Team lunch', amount: 24.5);
-    when(
-      () => repository.watchExpenses(),
-    ).thenAnswer((_) => Stream.value([expense]));
+    when(() => repository.watchExpenses())
+        .thenAnswer((_) => Stream.value([expense]));
     await mount(tester);
     await tester.tap(find.byTooltip('Delete expense'));
     await tester.pumpAndSettle();
@@ -193,15 +190,12 @@ void main() {
       final expense = _expense(id: 'a', title: 'Team lunch', amount: 24.5);
       final listController = StreamController<List<Expense>>();
       addTearDown(listController.close);
-      when(
-        () => repository.watchExpenses(),
-      ).thenAnswer((_) => listController.stream);
+      when(() => repository.watchExpenses())
+          .thenAnswer((_) => listController.stream);
       final done = Completer<void>();
-      when(
-        () => repository.deleteExpense('a'),
-      ).thenAnswer((_) => done.future);
-      await mount(tester);
+      when(() => repository.deleteExpense('a')).thenAnswer((_) => done.future);
       listController.add([expense]);
+      await mount(tester);
       await tester.pumpAndSettle();
 
       await tester.tap(find.byTooltip('Delete expense'));
@@ -231,9 +225,8 @@ void main() {
     'failed delete surfaces an error, keeps the row, and re-enables retry',
     (tester) async {
       final expense = _expense(id: 'a', title: 'Team lunch', amount: 24.5);
-      when(
-        () => repository.watchExpenses(),
-      ).thenAnswer((_) => Stream.value([expense]));
+      when(() => repository.watchExpenses())
+          .thenAnswer((_) => Stream.value([expense]));
       when(() => repository.deleteExpense('a')).thenThrow(
         const AppException(
           AppErrorCode.unavailable,
@@ -252,7 +245,14 @@ void main() {
       expect(find.text('Team lunch'), findsOneWidget);
       expect(find.byTooltip('Delete expense'), findsOneWidget);
       expect(
-        tester.widget<IconButton>(find.byTooltip('Delete expense')).onPressed,
+        tester
+            .widget<IconButton>(
+              find.ancestor(
+                of: find.byTooltip('Delete expense'),
+                matching: find.byType(IconButton),
+              ),
+            )
+            .onPressed,
         isNotNull,
       );
     },
@@ -262,12 +262,10 @@ void main() {
     'edit action navigates to the edit screen and loads that expense',
     (tester) async {
       final expense = _expense(id: 'a', title: 'Team lunch', amount: 24.5);
-      when(
-        () => repository.watchExpenses(),
-      ).thenAnswer((_) => Stream.value([expense]));
-      when(
-        () => repository.getExpenseById('a'),
-      ).thenAnswer((_) async => expense);
+      when(() => repository.watchExpenses())
+          .thenAnswer((_) => Stream.value([expense]));
+      when(() => repository.getExpenseById('a'))
+          .thenAnswer((_) async => expense);
       await mount(tester);
       await tester.tap(find.byTooltip('Edit expense'));
       await tester.pumpAndSettle();

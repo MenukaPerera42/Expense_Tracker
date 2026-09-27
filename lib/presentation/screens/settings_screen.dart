@@ -124,25 +124,29 @@ class _CurrencyTile extends ConsumerWidget {
     final selected = await showModalBottomSheet<CurrencyConfig>(
       context: context,
       builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Padding(
-              padding: EdgeInsets.fromLTRB(16, 16, 16, 0),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text('Choose currency'),
-              ),
+        child: SingleChildScrollView(
+          child: RadioGroup<CurrencyConfig>(
+            groupValue: current,
+            onChanged: (value) => Navigator.of(sheetContext).pop(value),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(16, 16, 16, 0),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text('Choose currency'),
+                  ),
+                ),
+                for (final option in CurrencyConfig.options)
+                  RadioListTile<CurrencyConfig>(
+                    value: option,
+                    title: Text(option.code),
+                    subtitle: Text(option.locale),
+                  ),
+              ],
             ),
-            for (final option in CurrencyConfig.options)
-              RadioListTile<CurrencyConfig>(
-                value: option,
-                groupValue: current,
-                title: Text(option.code),
-                subtitle: Text(option.locale),
-                onChanged: (value) => Navigator.of(sheetContext).pop(value),
-              ),
-          ],
+          ),
         ),
       ),
     );
@@ -159,10 +163,7 @@ class _LogoutTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final action = ref.watch(authActionProvider);
     return ListTile(
-      leading: Icon(
-        Icons.logout,
-        color: Theme.of(context).colorScheme.error,
-      ),
+      leading: Icon(Icons.logout, color: Theme.of(context).colorScheme.error),
       title: Text(
         'Log out',
         style: TextStyle(color: Theme.of(context).colorScheme.error),

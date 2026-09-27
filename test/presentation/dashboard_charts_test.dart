@@ -10,7 +10,9 @@ import 'package:expense_tracker/presentation/widgets/monthly_spending_chart.dart
 Widget _app(Widget child, {Brightness brightness = Brightness.light}) {
   return MaterialApp(
     theme: ThemeData(brightness: brightness, useMaterial3: true),
-    home: Scaffold(body: Padding(padding: const EdgeInsets.all(16), child: child)),
+    home: Scaffold(
+      body: Padding(padding: const EdgeInsets.all(16), child: child),
+    ),
   );
 }
 
@@ -24,9 +26,7 @@ void main() {
       expect(find.byType(PieChart), findsNothing);
     });
 
-    testWidgets('a single category renders as one full slice', (
-      tester,
-    ) async {
+    testWidgets('a single category renders as one full slice', (tester) async {
       await tester.pumpWidget(
         _app(
           const CategoryPieChart(
@@ -165,9 +165,7 @@ void main() {
       await tester.pumpWidget(
         _app(
           MonthlySpendingChart(
-            points: [
-              MonthlySpendingPoint(month: DateTime(2026, 9), total: 25),
-            ],
+            points: [MonthlySpendingPoint(month: DateTime(2026, 9), total: 25)],
           ),
           brightness: Brightness.dark,
         ),

@@ -19,6 +19,26 @@ const Map<ExpenseCategory, IconData> _categoryIcons = {
 
 IconData iconForCategory(ExpenseCategory category) => _categoryIcons[category]!;
 
+/// A fixed, stable color per category for charts and other visual
+/// summaries. Deliberately not theme-derived: these are chart accent
+/// colors that need to stay distinguishable from each other regardless of
+/// the seeded Material color scheme, in both light and dark mode — the
+/// `shade400` tone reads clearly against both a light and a dark surface.
+const Map<ExpenseCategory, MaterialColor> _categoryColors = {
+  ExpenseCategory.food: Colors.orange,
+  ExpenseCategory.transport: Colors.blue,
+  ExpenseCategory.shopping: Colors.purple,
+  ExpenseCategory.bills: Colors.red,
+  ExpenseCategory.entertainment: Colors.pink,
+  ExpenseCategory.health: Colors.green,
+  ExpenseCategory.education: Colors.teal,
+  ExpenseCategory.travel: Colors.indigo,
+  ExpenseCategory.other: Colors.blueGrey,
+};
+
+Color colorForCategory(ExpenseCategory category) =>
+    _categoryColors[category]!.shade400;
+
 /// A visually clear, single-select category picker built from chips rather
 /// than a dropdown, so all nine categories and their icons are visible and
 /// reachable in one tap.

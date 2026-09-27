@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 abstract class Initializer {
   Future<void> initialize();
@@ -12,13 +13,16 @@ abstract class Initializer {
 class MockInitializer extends Mock implements Initializer {}
 
 void main() {
-  test('theme follows system then retains the session selection', () {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  test('theme follows system then retains the session selection', () async {
+    SharedPreferences.setMockInitialValues({});
     final container = ProviderContainer();
     addTearDown(container.dispose);
     expect(container.read(themeModeProvider), ThemeMode.system);
-    container.read(themeModeProvider.notifier).setMode(ThemeMode.dark);
+    await container.read(themeModeProvider.notifier).setMode(ThemeMode.dark);
     expect(container.read(themeModeProvider), ThemeMode.dark);
-    container.read(themeModeProvider.notifier).setMode(ThemeMode.system);
+    await container.read(themeModeProvider.notifier).setMode(ThemeMode.system);
     expect(container.read(themeModeProvider), ThemeMode.system);
   });
 

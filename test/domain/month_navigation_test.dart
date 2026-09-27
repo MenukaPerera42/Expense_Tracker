@@ -81,7 +81,10 @@ void main() {
 
     test('false across a month boundary', () {
       expect(
-        MonthNavigation.isSameMonth(DateTime(2026, 9, 30), DateTime(2026, 10, 1)),
+        MonthNavigation.isSameMonth(
+          DateTime(2026, 9, 30),
+          DateTime(2026, 10, 1),
+        ),
         isFalse,
       );
     });

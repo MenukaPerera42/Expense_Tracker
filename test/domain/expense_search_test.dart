@@ -64,14 +64,11 @@ void main() {
     expect(result.map((e) => e.id).toList(), ['groceries']);
   });
 
-  test(
-    'is whitespace-tolerant: extra/leading/trailing spaces in the query '
-    'still match normally-spaced text',
-    () {
-      final result = ExpenseSearchEngine.apply(expenses, '   team    lunch  ');
-      expect(result.map((e) => e.id).toList(), ['lunch']);
-    },
-  );
+  test('is whitespace-tolerant: extra/leading/trailing spaces in the query '
+      'still match normally-spaced text', () {
+    final result = ExpenseSearchEngine.apply(expenses, '   team    lunch  ');
+    expect(result.map((e) => e.id).toList(), ['lunch']);
+  });
 
   test('a query matching neither title nor note returns no results', () {
     final result = ExpenseSearchEngine.apply(expenses, 'taxi');
@@ -106,8 +103,11 @@ void main() {
     expect(result.map((e) => e.id).toList(), ['lunch']);
   });
 
-  test('clearing the search (empty query) returns the full input unfiltered', () {
-    expect(ExpenseSearchEngine.apply(expenses, ''), expenses);
-    expect(ExpenseSearchEngine.apply(expenses, '   '), expenses);
-  });
+  test(
+    'clearing the search (empty query) returns the full input unfiltered',
+    () {
+      expect(ExpenseSearchEngine.apply(expenses, ''), expenses);
+      expect(ExpenseSearchEngine.apply(expenses, '   '), expenses);
+    },
+  );
 }

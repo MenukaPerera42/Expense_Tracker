@@ -32,12 +32,18 @@ void main() {
       expect(ExpenseValidation.amount('NaN'), 'Enter a valid number.');
     });
     test('rejects zero and negative amounts', () {
-      expect(ExpenseValidation.amount('0'), 'Amount must be greater than zero.');
+      expect(
+        ExpenseValidation.amount('0'),
+        'Amount must be greater than zero.',
+      );
       expect(
         ExpenseValidation.amount('0.0'),
         'Amount must be greater than zero.',
       );
-      expect(ExpenseValidation.amount('-5'), 'Amount must be greater than zero.');
+      expect(
+        ExpenseValidation.amount('-5'),
+        'Amount must be greater than zero.',
+      );
       expect(
         ExpenseValidation.amount('-0.01'),
         'Amount must be greater than zero.',

@@ -67,8 +67,13 @@ final class ExpenseFilter {
   bool get isActive =>
       category != null || date != null || dateRange != null || month != null;
 
-  ExpenseFilter copyWithCategory(ExpenseCategory? category) =>
-      ExpenseFilter(category: category, date: date, dateRange: dateRange, month: month, sort: sort);
+  ExpenseFilter copyWithCategory(ExpenseCategory? category) => ExpenseFilter(
+    category: category,
+    date: date,
+    dateRange: dateRange,
+    month: month,
+    sort: sort,
+  );
 
   /// Setting an exact date clears the range/month filters — the three date
   /// modes are mutually exclusive in the UI, so only one is ever active.
@@ -125,7 +130,9 @@ final class ExpenseFilter {
 /// unit tested directly against plain lists of [Expense].
 abstract final class ExpenseFilterEngine {
   static List<Expense> apply(List<Expense> expenses, ExpenseFilter filter) {
-    final filtered = expenses.where((expense) => _matches(expense, filter)).toList();
+    final filtered = expenses
+        .where((expense) => _matches(expense, filter))
+        .toList();
     filtered.sort(_comparatorFor(filter.sort));
     return filtered;
   }

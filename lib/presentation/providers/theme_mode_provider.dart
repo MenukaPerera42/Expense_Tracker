@@ -20,7 +20,9 @@ class ThemeModeController extends Notifier<ThemeMode> {
 
   Future<void> _restore() async {
     final prefs = await ref.read(sharedPreferencesProvider.future);
+    if (!ref.mounted) return;
     final stored = prefs.getString(_prefsKey);
+    if (stored == null) return;
     final restored = ThemeMode.values.firstWhere(
       (mode) => mode.name == stored,
       orElse: () => ThemeMode.system,

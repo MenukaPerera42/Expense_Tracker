@@ -14,7 +14,11 @@ import 'category_selector.dart';
 /// delete controller (see ExpenseHistoryView), so this widget never shows
 /// its own SnackBar and can be disposed mid-delete without losing feedback.
 class ExpenseListItem extends ConsumerWidget {
-  const ExpenseListItem({super.key, required this.expense, required this.onEdit});
+  const ExpenseListItem({
+    super.key,
+    required this.expense,
+    required this.onEdit,
+  });
 
   final Expense expense;
   final VoidCallback onEdit;
@@ -125,7 +129,9 @@ class ExpenseListItem extends ConsumerWidget {
                             ? const SizedBox(
                                 width: 18,
                                 height: 18,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
                               )
                             : const Icon(Icons.delete_outline, size: 20),
                       ),
@@ -166,7 +172,9 @@ class ExpenseListItem extends ConsumerWidget {
       ),
     );
     if (confirmed == true) {
-      await ref.read(deleteExpenseControllerProvider.notifier).delete(expense.id);
+      await ref
+          .read(deleteExpenseControllerProvider.notifier)
+          .delete(expense.id);
     }
   }
 }

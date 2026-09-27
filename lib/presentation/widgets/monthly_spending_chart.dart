@@ -93,13 +93,14 @@ class MonthlySpendingChart extends StatelessWidget {
           barTouchData: BarTouchData(
             touchTooltipData: BarTouchTooltipData(
               getTooltipColor: (_) => theme.colorScheme.inverseSurface,
-              getTooltipItem: (group, groupIndex, rod, rodIndex) => BarTooltipItem(
-                '${DateFormat.yMMM().format(points[group.x.toInt()].month)}\n'
-                '${CurrencyConfig.defaultCurrency.format(rod.toY)}',
-                theme.textTheme.bodySmall!.copyWith(
-                  color: theme.colorScheme.onInverseSurface,
-                ),
-              ),
+              getTooltipItem: (group, groupIndex, rod, rodIndex) =>
+                  BarTooltipItem(
+                    '${DateFormat.yMMM().format(points[group.x.toInt()].month)}\n'
+                    '${CurrencyConfig.defaultCurrency.format(rod.toY)}',
+                    theme.textTheme.bodySmall!.copyWith(
+                      color: theme.colorScheme.onInverseSurface,
+                    ),
+                  ),
             ),
           ),
           barGroups: [
@@ -111,7 +112,8 @@ class MonthlySpendingChart extends StatelessWidget {
                     toY: point.total,
                     width: 18,
                     borderRadius: BorderRadius.circular(4),
-                    color: MonthNavigation.isSameMonth(point.month, selectedMonth)
+                    color:
+                        MonthNavigation.isSameMonth(point.month, selectedMonth)
                         ? theme.colorScheme.primary
                         : theme.colorScheme.primary.withValues(alpha: 0.35),
                   ),

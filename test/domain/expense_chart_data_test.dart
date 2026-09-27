@@ -61,9 +61,12 @@ void main() {
       }
     });
 
-    test('an empty category map is the zero-data case: an empty slice list', () {
-      expect(ExpenseChartData.categorySlices(const {}), isEmpty);
-    });
+    test(
+      'an empty category map is the zero-data case: an empty slice list',
+      () {
+        expect(ExpenseChartData.categorySlices(const {}), isEmpty);
+      },
+    );
 
     test('large amounts are represented exactly, with correct percentages', () {
       final slices = ExpenseChartData.categorySlices({
@@ -92,21 +95,18 @@ void main() {
       expect(points.single.total, 35);
     });
 
-    test(
-      'returns monthsBack points, oldest first, ending at endMonth',
-      () {
-        final points = ExpenseChartData.monthlySpending(
-          const [],
-          endMonth: DateTime(2026, 9),
-          monthsBack: 3,
-        );
-        expect(points.map((p) => p.month).toList(), [
-          DateTime(2026, 7),
-          DateTime(2026, 8),
-          DateTime(2026, 9),
-        ]);
-      },
-    );
+    test('returns monthsBack points, oldest first, ending at endMonth', () {
+      final points = ExpenseChartData.monthlySpending(
+        const [],
+        endMonth: DateTime(2026, 9),
+        monthsBack: 3,
+      );
+      expect(points.map((p) => p.month).toList(), [
+        DateTime(2026, 7),
+        DateTime(2026, 8),
+        DateTime(2026, 9),
+      ]);
+    });
 
     test('a month with no expenses reports a total of zero (zero-state)', () {
       final points = ExpenseChartData.monthlySpending(
@@ -117,23 +117,20 @@ void main() {
       expect(points.every((p) => p.total == 0), isTrue);
     });
 
-    test(
-      'each point matches ExpenseSummaryCalculator\'s total for that month '
-      '(the same transformation the dashboard total card relies on)',
-      () {
-        final expenses = [
-          _expense(id: 'a', amount: 10, date: DateTime(2026, 7, 15)),
-          _expense(id: 'b', amount: 25, date: DateTime(2026, 8, 3)),
-          _expense(id: 'c', amount: 5, date: DateTime(2026, 8, 28)),
-        ];
-        final points = ExpenseChartData.monthlySpending(
-          expenses,
-          endMonth: DateTime(2026, 8),
-          monthsBack: 2,
-        );
-        expect(points[0].total, 10); // July
-        expect(points[1].total, 30); // August
-      },
-    );
+    test('each point matches ExpenseSummaryCalculator\'s total for that month '
+        '(the same transformation the dashboard total card relies on)', () {
+      final expenses = [
+        _expense(id: 'a', amount: 10, date: DateTime(2026, 7, 15)),
+        _expense(id: 'b', amount: 25, date: DateTime(2026, 8, 3)),
+        _expense(id: 'c', amount: 5, date: DateTime(2026, 8, 28)),
+      ];
+      final points = ExpenseChartData.monthlySpending(
+        expenses,
+        endMonth: DateTime(2026, 8),
+        monthsBack: 2,
+      );
+      expect(points[0].total, 10); // July
+      expect(points[1].total, 30); // August
+    });
   });
 }

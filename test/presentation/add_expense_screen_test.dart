@@ -43,9 +43,8 @@ void main() {
     // Home's expense history view watches this as soon as the app becomes
     // authenticated; stub it so returning to Home after a save doesn't hit
     // an unstubbed call.
-    when(
-      () => repository.watchExpenses(),
-    ).thenAnswer((_) => Stream.value(const []));
+    when(() => repository.watchExpenses())
+        .thenAnswer((_) => Stream.value(const []));
   });
 
   Future<ProviderContainer> mount(WidgetTester tester) async {
@@ -78,7 +77,9 @@ void main() {
   }
 
   Future<void> tapSave(WidgetTester tester) async {
-    await tester.ensureVisible(find.widgetWithText(FilledButton, 'Save expense'));
+    await tester.ensureVisible(
+      find.widgetWithText(FilledButton, 'Save expense'),
+    );
     await tester.tap(find.widgetWithText(FilledButton, 'Save expense'));
     await tester.pumpAndSettle();
   }
@@ -98,7 +99,10 @@ void main() {
   testWidgets('malformed and zero amounts are both rejected', (tester) async {
     await mount(tester);
     await openAddExpense(tester);
-    await tester.enterText(find.widgetWithText(TextFormField, 'Title'), 'Lunch');
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Title'),
+      'Lunch',
+    );
     await tester.tap(find.text('Food'));
     await tester.enterText(
       find.widgetWithText(TextFormField, 'Amount'),
@@ -117,7 +121,10 @@ void main() {
   ) async {
     await mount(tester);
     await openAddExpense(tester);
-    await tester.enterText(find.widgetWithText(TextFormField, 'Title'), 'Lunch');
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Title'),
+      'Lunch',
+    );
     await tester.enterText(find.widgetWithText(TextFormField, 'Amount'), '10');
     await tapSave(tester);
     expect(find.text('Choose a category.'), findsOneWidget);
@@ -128,9 +135,8 @@ void main() {
     'valid submission shows a saving state, then success and returns home',
     (tester) async {
       final done = Completer<void>();
-      when(
-        () => repository.createExpense(any()),
-      ).thenAnswer((_) => done.future);
+      when(() => repository.createExpense(any()))
+          .thenAnswer((_) => done.future);
       await mount(tester);
       await openAddExpense(tester);
       await tester.enterText(
@@ -142,6 +148,9 @@ void main() {
         '12.50',
       );
       await tester.tap(find.text('Food'));
+      await tester.ensureVisible(
+        find.widgetWithText(FilledButton, 'Save expense'),
+      );
       await tester.tap(find.widgetWithText(FilledButton, 'Save expense'));
       await tester.pump();
 
@@ -180,7 +189,10 @@ void main() {
     );
     await mount(tester);
     await openAddExpense(tester);
-    await tester.enterText(find.widgetWithText(TextFormField, 'Title'), 'Lunch');
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Title'),
+      'Lunch',
+    );
     await tester.enterText(find.widgetWithText(TextFormField, 'Amount'), '10');
     await tester.tap(find.text('Food'));
     await tapSave(tester);

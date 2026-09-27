@@ -129,16 +129,13 @@ void main() {
     unawaited(dataEvents.close());
   });
 
-  test(
-    'newExpenseId allocates a locally generated auto-ID under the caller\'s collection',
-    () {
-      final autoDoc = MockDocument();
-      when(() => collection.doc()).thenReturn(autoDoc);
-      when(() => autoDoc.id).thenReturn('auto-generated-id');
-      expect(repository.newExpenseId(), 'auto-generated-id');
-      verify(() => collection.doc()).called(1);
-    },
-  );
+  test('newExpenseId allocates a locally generated auto-ID under the caller\'s collection', () {
+    final autoDoc = MockDocument();
+    when(() => collection.doc()).thenReturn(autoDoc);
+    when(() => autoDoc.id).thenReturn('auto-generated-id');
+    expect(repository.newExpenseId(), 'auto-generated-id');
+    verify(() => collection.doc()).called(1);
+  });
   test(
     'create serializes owner/date/category and uses two server timestamps',
     () async {

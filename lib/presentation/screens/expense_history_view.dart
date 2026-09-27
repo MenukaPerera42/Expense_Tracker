@@ -31,12 +31,10 @@ class ExpenseHistoryView extends ConsumerWidget {
         if (before?.isLoading == true &&
             entry.value.hasValue &&
             !entry.value.isLoading) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('Expense deleted.')));
+          ScaffoldMessenger.of(context)
+              .showSnackBar(const SnackBar(content: Text('Expense deleted.')));
           ref.read(deleteExpenseControllerProvider.notifier).clear(entry.key);
-        } else if (entry.value.hasError &&
-            !(before?.hasError ?? false)) {
+        } else if (entry.value.hasError && !(before?.hasError ?? false)) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(expenseErrorMessage(entry.value.error))),
           );
@@ -49,7 +47,7 @@ class ExpenseHistoryView extends ConsumerWidget {
     // all; filteredExpenseListProvider re-maps the same data through the
     // active ExpenseFilter, so switching filters never re-queries Firestore.
     final hasAnyExpenses = ref.watch(
-      expenseListProvider.select((state) => state.valueOrNull?.isNotEmpty ?? false),
+      expenseListProvider.select((state) => state.value?.isNotEmpty ?? false),
     );
     final filtered = ref.watch(filteredExpenseListProvider);
 
@@ -88,7 +86,9 @@ class ExpenseHistoryView extends ConsumerWidget {
             );
           }
           final searchActive = ref.watch(
-            expenseSearchQueryProvider.select((query) => query.trim().isNotEmpty),
+            expenseSearchQueryProvider.select(
+              (query) => query.trim().isNotEmpty,
+            ),
           );
           final filterActive = ref.watch(
             expenseFilterProvider.select((filter) => filter.isActive),
@@ -117,8 +117,7 @@ class ExpenseHistoryView extends ConsumerWidget {
                         child: StatusView(
                           icon: Icons.filter_alt_off_outlined,
                           title: 'No matching expenses',
-                          message:
-                              'Try a different search term, category, date, or range.',
+                          message: 'Try a different search term, category, date, or range.',
                           action: FilledButton(
                             onPressed: () {
                               if (searchActive) {

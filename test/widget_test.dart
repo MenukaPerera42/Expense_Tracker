@@ -132,6 +132,11 @@ void main() {
       addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
       await mount(tester);
       await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.textContaining('No expenses in'),
+        100,
+        scrollable: find.byType(Scrollable).first,
+      );
       expect(find.textContaining('No expenses in'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });

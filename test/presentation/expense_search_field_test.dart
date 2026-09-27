@@ -124,9 +124,9 @@ void main() {
   });
 
   testWidgets('search is case-insensitive', (tester) async {
-    when(() => repository.watchExpenses()).thenAnswer(
-      (_) => Stream.value([_expense(id: 'a', title: 'Team Lunch')]),
-    );
+    when(
+      () => repository.watchExpenses(),
+    ).thenAnswer((_) => Stream.value([_expense(id: 'a', title: 'Team Lunch')]));
     await mount(tester);
     await search(tester, 'TEAM LUNCH');
     expect(find.text('Team Lunch'), findsOneWidget);
@@ -135,18 +135,16 @@ void main() {
   testWidgets('a search matching nothing shows the empty state', (
     tester,
   ) async {
-    when(() => repository.watchExpenses()).thenAnswer(
-      (_) => Stream.value([_expense(id: 'a', title: 'Team lunch')]),
-    );
+    when(
+      () => repository.watchExpenses(),
+    ).thenAnswer((_) => Stream.value([_expense(id: 'a', title: 'Team lunch')]));
     await mount(tester);
     await search(tester, 'taxi');
     expect(find.text('No matching expenses'), findsOneWidget);
     expect(find.widgetWithText(FilledButton, 'Clear search'), findsOneWidget);
   });
 
-  testWidgets('search combines with an active category filter', (
-    tester,
-  ) async {
+  testWidgets('search combines with an active category filter', (tester) async {
     when(() => repository.watchExpenses()).thenAnswer(
       (_) => Stream.value([
         _expense(id: 'a', title: 'Team lunch', category: ExpenseCategory.food),
@@ -182,9 +180,9 @@ void main() {
     // platform date picker (already exercised, without this brittleness,
     // by ExpenseFilterBar's own tests) — the point here is proving search
     // and an active date filter combine correctly.
-    container.read(expenseFilterProvider.notifier).setDate(
-      DateTime.utc(2026, 9, 5),
-    );
+    container
+        .read(expenseFilterProvider.notifier)
+        .setDate(DateTime.utc(2026, 9, 5));
     await tester.pumpAndSettle();
 
     await search(tester, 'lunch');

@@ -9,7 +9,10 @@ abstract final class ExpenseSearchEngine {
     final normalizedQuery = normalize(query);
     if (normalizedQuery.isEmpty) return expenses;
     return expenses
-        .where((expense) => matches(expense, normalizedQuery, alreadyNormalized: true))
+        .where(
+          (expense) =>
+              matches(expense, normalizedQuery, alreadyNormalized: true),
+        )
         .toList();
   }
 

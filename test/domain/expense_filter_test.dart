@@ -68,18 +68,21 @@ void main() {
     expect(result.map((e) => e.id).toList(), ['transport-sep-10']);
   });
 
-  test('date range filtering keeps only expenses within the inclusive range', () {
-    final result = ExpenseFilterEngine.apply(
-      expenses,
-      const ExpenseFilter().copyWithDateRange(
-        DateRange(start: DateTime(2026, 9, 1), end: DateTime(2026, 9, 15)),
-      ),
-    );
-    expect(result.map((e) => e.id).toSet(), {
-      'food-sep-5',
-      'transport-sep-10',
-    });
-  });
+  test(
+    'date range filtering keeps only expenses within the inclusive range',
+    () {
+      final result = ExpenseFilterEngine.apply(
+        expenses,
+        const ExpenseFilter().copyWithDateRange(
+          DateRange(start: DateTime(2026, 9, 1), end: DateTime(2026, 9, 15)),
+        ),
+      );
+      expect(result.map((e) => e.id).toSet(), {
+        'food-sep-5',
+        'transport-sep-10',
+      });
+    },
+  );
 
   test('month filtering keeps only expenses in that calendar month', () {
     final result = ExpenseFilterEngine.apply(
@@ -152,10 +155,7 @@ void main() {
         .copyWithSort(ExpenseSortOption.highestAmount);
     final result = ExpenseFilterEngine.apply(expenses, filter);
     // Only food expenses in September, highest amount first.
-    expect(result.map((e) => e.id).toList(), [
-      'food-sep-5',
-      'food-sep-20',
-    ]);
+    expect(result.map((e) => e.id).toList(), ['food-sep-5', 'food-sep-20']);
   });
 
   test('clearing filters returns to the unfiltered, default-sorted list', () {
@@ -186,20 +186,17 @@ void main() {
     expect(result, isEmpty);
   });
 
-  test(
-    'setting a date clears any previously set date range or month, since '
-    'the three date modes are mutually exclusive',
-    () {
-      final withRange = const ExpenseFilter().copyWithDateRange(
-        DateRange(start: DateTime(2026, 9, 1), end: DateTime(2026, 9, 30)),
-      );
-      final withDate = withRange.copyWithDate(DateTime(2026, 9, 10));
-      expect(withDate.dateRange, isNull);
-      expect(withDate.date, DateTime(2026, 9, 10));
+  test('setting a date clears any previously set date range or month, since '
+      'the three date modes are mutually exclusive', () {
+    final withRange = const ExpenseFilter().copyWithDateRange(
+      DateRange(start: DateTime(2026, 9, 1), end: DateTime(2026, 9, 30)),
+    );
+    final withDate = withRange.copyWithDate(DateTime(2026, 9, 10));
+    expect(withDate.dateRange, isNull);
+    expect(withDate.date, DateTime(2026, 9, 10));
 
-      final withMonth = withDate.copyWithMonth(DateTime(2026, 8));
-      expect(withMonth.date, isNull);
-      expect(withMonth.month, DateTime(2026, 8));
-    },
-  );
+    final withMonth = withDate.copyWithMonth(DateTime(2026, 8));
+    expect(withMonth.date, isNull);
+    expect(withMonth.month, DateTime(2026, 8));
+  });
 }

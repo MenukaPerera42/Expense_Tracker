@@ -34,14 +34,13 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
       next,
     ) {
       if (previous?.isLoading == true && next.hasValue && !next.isLoading) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Expense saved.')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('Expense saved.')));
         Navigator.of(context).pop();
       } else if (next.hasError) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(expenseErrorMessage(next.error))));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(expenseErrorMessage(next.error))),
+        );
       }
     });
 
@@ -69,23 +68,24 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
               saving: saving,
               submitLabel: 'Save expense',
               onDirtyChanged: (dirty) => setState(() => _dirty = dirty),
-              onSubmit: ({
-                required title,
-                required amount,
-                required category,
-                required date,
-                required note,
-              }) {
-                ref
-                    .read(addExpenseControllerProvider.notifier)
-                    .submit(
-                      title: title,
-                      amount: amount,
-                      category: category,
-                      date: date,
-                      note: note,
-                    );
-              },
+              onSubmit:
+                  ({
+                    required title,
+                    required amount,
+                    required category,
+                    required date,
+                    required note,
+                  }) {
+                    ref
+                        .read(addExpenseControllerProvider.notifier)
+                        .submit(
+                          title: title,
+                          amount: amount,
+                          category: category,
+                          date: date,
+                          note: note,
+                        );
+                  },
             ),
           ),
         ),

@@ -38,7 +38,7 @@ final addExpenseControllerProvider =
 /// Builds and saves a new [Expense] from already-validated primitive form
 /// values. Parsing and repository access live here rather than in the
 /// screen, so presentation never touches Firestore directly.
-class AddExpenseController extends AutoDisposeNotifier<AsyncValue<void>> {
+class AddExpenseController extends Notifier<AsyncValue<void>> {
   @override
   AsyncValue<void> build() => const AsyncData(null);
 
@@ -52,7 +52,7 @@ class AddExpenseController extends AutoDisposeNotifier<AsyncValue<void>> {
     if (state.isLoading) return;
     state = const AsyncLoading();
     try {
-      final userId = ref.read(authStateProvider).valueOrNull?.id;
+      final userId = ref.read(authStateProvider).value?.id;
       if (userId == null) {
         throw const AppException(
           AppErrorCode.unauthenticated,
@@ -101,7 +101,7 @@ final editExpenseControllerProvider =
 /// fields can never be altered by editing; the repository additionally
 /// enforces this server-side (updateExpense strips id/userId/createdAt from
 /// the write and stamps updatedAt with a server timestamp).
-class EditExpenseController extends AutoDisposeNotifier<AsyncValue<void>> {
+class EditExpenseController extends Notifier<AsyncValue<void>> {
   @override
   AsyncValue<void> build() => const AsyncData(null);
 
@@ -148,10 +148,10 @@ class EditExpenseController extends AutoDisposeNotifier<AsyncValue<void>> {
   }
 }
 
-final deleteExpenseControllerProvider = NotifierProvider<
-  DeleteExpenseController,
-  Map<String, AsyncValue<void>>
->(DeleteExpenseController.new);
+final deleteExpenseControllerProvider =
+    NotifierProvider<DeleteExpenseController, Map<String, AsyncValue<void>>>(
+      DeleteExpenseController.new,
+    );
 
 /// Tracks the in-flight/last delete result keyed by expense ID, so each row
 /// in the history list can show its own loading/error state independently

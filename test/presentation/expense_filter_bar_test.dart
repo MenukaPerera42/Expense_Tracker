@@ -68,8 +68,18 @@ void main() {
   testWidgets('selecting a category filter narrows the list', (tester) async {
     when(() => repository.watchExpenses()).thenAnswer(
       (_) => Stream.value([
-        _expense(id: 'a', title: 'Lunch', amount: 10, category: ExpenseCategory.food),
-        _expense(id: 'b', title: 'Bus', amount: 3, category: ExpenseCategory.transport),
+        _expense(
+          id: 'a',
+          title: 'Lunch',
+          amount: 10,
+          category: ExpenseCategory.food,
+        ),
+        _expense(
+          id: 'b',
+          title: 'Bus',
+          amount: 3,
+          category: ExpenseCategory.transport,
+        ),
       ]),
     );
     await mount(tester);
@@ -92,7 +102,12 @@ void main() {
     (tester) async {
       when(() => repository.watchExpenses()).thenAnswer(
         (_) => Stream.value([
-          _expense(id: 'a', title: 'Lunch', amount: 10, category: ExpenseCategory.food),
+          _expense(
+            id: 'a',
+            title: 'Lunch',
+            amount: 10,
+            category: ExpenseCategory.food,
+          ),
         ]),
       );
       await mount(tester);

@@ -12,6 +12,7 @@ import 'package:expense_tracker/domain/entities/auth_user.dart';
 import 'package:expense_tracker/domain/entities/expense.dart';
 import 'package:expense_tracker/domain/entities/expense_category.dart';
 import 'package:expense_tracker/domain/repositories/expense_repository.dart';
+import 'package:expense_tracker/presentation/providers/auth_providers.dart';
 
 class MockExpenseRepository extends Mock implements ExpenseRepository {}
 
@@ -52,6 +53,10 @@ void main() {
   });
 
   Future<ProviderContainer> mount(WidgetTester tester) async {
+    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
     final container = ProviderContainer(
       retry: (_, _) => null,
       overrides: [
@@ -90,8 +95,15 @@ void main() {
     );
     await mount(tester);
 
+    final totalCard = find.ancestor(
+      of: find.text('Total spending'),
+      matching: find.byType(Card),
+    );
     expect(
-      find.text(CurrencyConfig.defaultCurrency.format(35.5)),
+      find.descendant(
+        of: totalCard,
+        matching: find.text(CurrencyConfig.defaultCurrency.format(35.5)),
+      ),
       findsOneWidget,
     );
     expect(find.text('2 transactions'), findsOneWidget);
@@ -141,10 +153,7 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('Transport'), findsOneWidget);
-    expect(
-      find.text(CurrencyConfig.defaultCurrency.format(7)),
-      findsOneWidget,
-    );
+    expect(find.text(CurrencyConfig.defaultCurrency.format(7)), findsOneWidget);
   });
 
   testWidgets('recent expenses are listed newest first', (tester) async {
@@ -167,60 +176,67 @@ void main() {
   testWidgets('an empty month shows the empty state instead of a breakdown', (
     tester,
   ) async {
-    when(
-      () => repository.watchExpenses(),
-    ).thenAnswer((_) => Stream.value(const []));
+    when(() => repository.watchExpenses())
+        .thenAnswer((_) => Stream.value(const []));
     await mount(tester);
 
     expect(find.textContaining('No expenses in'), findsOneWidget);
     expect(find.text('Spending by category'), findsNothing);
-    expect(
-      find.text(CurrencyConfig.defaultCurrency.format(0)),
-      findsOneWidget,
-    );
+    expect(find.text(CurrencyConfig.defaultCurrency.format(0)), findsOneWidget);
   });
 
-  testWidgets(
-    'navigating to the previous month shows that month\'s data, and '
-    'switching months never triggers another Firestore read',
-    (tester) async {
-      when(() => repository.watchExpenses()).thenAnswer(
-        (_) => Stream.value([
-          _expense(id: 'a', title: 'This month', amount: 20, date: _thisMonth(5)),
-          _expense(
-            id: 'b',
-            title: 'Last month',
-            amount: 999,
-            date: _previousMonth(20),
-          ),
-        ]),
-      );
-      await mount(tester);
-      expect(find.text('This month'), findsOneWidget);
-      expect(find.text('Last month'), findsNothing);
+  testWidgets('navigating to the previous month shows that month\'s data, and '
+      'switching months never triggers another Firestore read', (tester) async {
+    when(() => repository.watchExpenses()).thenAnswer(
+      (_) => Stream.value([
+        _expense(id: 'a', title: 'This month', amount: 20, date: _thisMonth(5)),
+        _expense(
+          id: 'b',
+          title: 'Last month',
+          amount: 999,
+          date: _previousMonth(20),
+        ),
+      ]),
+    );
+    await mount(tester);
+    expect(find.text('This month'), findsOneWidget);
+    expect(find.text('Last month'), findsNothing);
 
-      await tester.tap(find.byTooltip('Previous month'));
-      await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Previous month'));
+    await tester.pumpAndSettle();
 
-      expect(find.text('Last month'), findsOneWidget);
-      expect(find.text('This month'), findsNothing);
-      expect(
-        find.text(CurrencyConfig.defaultCurrency.format(999)),
-        findsOneWidget,
-      );
+    expect(find.text('Last month'), findsOneWidget);
+    expect(find.text('This month'), findsNothing);
+    final totalCard = find.ancestor(
+      of: find.text('Total spending'),
+      matching: find.byType(Card),
+    );
+    expect(
+      find.descendant(
+        of: totalCard,
+        matching: find.text(CurrencyConfig.defaultCurrency.format(999)),
+      ),
+      findsOneWidget,
+    );
 
-      await tester.tap(find.byTooltip('Next month'));
-      await tester.pumpAndSettle();
-      expect(find.text('This month'), findsOneWidget);
+    await tester.tap(find.byTooltip('Next month'));
+    await tester.pumpAndSettle();
+    expect(find.text('This month'), findsOneWidget);
 
-      // "Next" is disabled once back at the current month.
-      expect(
-        tester.widget<IconButton>(find.byTooltip('Next month')).onPressed,
-        isNull,
-      );
+    // "Next" is disabled once back at the current month.
+    expect(
+      tester
+          .widget<IconButton>(
+            find.ancestor(
+              of: find.byTooltip('Next month'),
+              matching: find.byType(IconButton),
+            ),
+          )
+          .onPressed,
+      isNull,
+    );
 
-      // A single subscription serves every month switch above.
-      verify(() => repository.watchExpenses()).called(1);
-    },
-  );
+    // A single subscription serves every month switch above.
+    verify(() => repository.watchExpenses()).called(1);
+  });
 }

@@ -130,7 +130,10 @@ class _CategoryPickerSheet extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Filter by category', style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              'Filter by category',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             const SizedBox(height: AppSpacing.medium),
             Wrap(
               spacing: AppSpacing.small,

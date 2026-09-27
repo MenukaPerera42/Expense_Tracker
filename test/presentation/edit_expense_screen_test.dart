@@ -48,7 +48,11 @@ void main() {
   /// behavior (success, "not found" -> Go back, and the discard dialog) can
   /// be verified against a real Navigator stack instead of just checking
   /// text on screen.
-  Future<void> openEditor(WidgetTester tester, {required String id}) async {
+  Future<void> openEditor(
+    WidgetTester tester, {
+    required String id,
+    bool settle = true,
+  }) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -73,15 +77,21 @@ void main() {
       ),
     );
     await tester.tap(find.text('Open editor'));
-    await tester.pumpAndSettle();
+    if (settle) {
+      await tester.pumpAndSettle();
+    } else {
+      await tester.pump();
+      await tester.pump();
+    }
   }
 
   testWidgets('loading state shows a spinner while the expense is fetched', (
     tester,
   ) async {
     final completer = Completer<Expense?>();
-    when(() => repository.getExpenseById('a')).thenAnswer((_) => completer.future);
-    await openEditor(tester, id: 'a');
+    when(() => repository.getExpenseById('a'))
+        .thenAnswer((_) => completer.future);
+    await openEditor(tester, id: 'a', settle: false);
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
     completer.complete(_expense());
     await tester.pumpAndSettle();
@@ -92,7 +102,8 @@ void main() {
   testWidgets('missing expense shows a not-found state and can go back', (
     tester,
   ) async {
-    when(() => repository.getExpenseById('missing')).thenAnswer((_) async => null);
+    when(() => repository.getExpenseById('missing'))
+        .thenAnswer((_) async => null);
     await openEditor(tester, id: 'missing');
     expect(find.text('Expense not found'), findsOneWidget);
     await tester.tap(find.text('Go back'));
@@ -114,7 +125,9 @@ void main() {
     expect(find.text('24.5'), findsOneWidget);
     expect(find.text('With the design team'), findsOneWidget);
     expect(
-      tester.widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'Food')).selected,
+      tester
+          .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'Food'))
+          .selected,
       isTrue,
     );
     expect(
@@ -126,7 +139,8 @@ void main() {
   });
 
   testWidgets('field changes are reflected back in the form', (tester) async {
-    when(() => repository.getExpenseById('a')).thenAnswer((_) async => _expense());
+    when(() => repository.getExpenseById('a'))
+        .thenAnswer((_) async => _expense());
     await openEditor(tester, id: 'a');
     await tester.enterText(find.widgetWithText(TextFormField, 'Amount'), '50');
     await tester.tap(find.widgetWithText(ChoiceChip, 'Transport'));
@@ -139,7 +153,9 @@ void main() {
       isTrue,
     );
     expect(
-      tester.widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'Food')).selected,
+      tester
+          .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'Food'))
+          .selected,
       isFalse,
     );
   });
@@ -147,9 +163,13 @@ void main() {
   testWidgets('clearing the title blocks submission with a validation error', (
     tester,
   ) async {
-    when(() => repository.getExpenseById('a')).thenAnswer((_) async => _expense());
+    when(() => repository.getExpenseById('a'))
+        .thenAnswer((_) async => _expense());
     await openEditor(tester, id: 'a');
     await tester.enterText(find.widgetWithText(TextFormField, 'Title'), '');
+    await tester.ensureVisible(
+      find.widgetWithText(FilledButton, 'Save changes'),
+    );
     await tester.tap(find.widgetWithText(FilledButton, 'Save changes'));
     await tester.pumpAndSettle();
     expect(find.text('Enter a title.'), findsOneWidget);
@@ -160,14 +180,19 @@ void main() {
     'successful update shows a saving state, then confirms and returns',
     (tester) async {
       final expense = _expense();
-      when(() => repository.getExpenseById('a')).thenAnswer((_) async => expense);
+      when(() => repository.getExpenseById('a'))
+          .thenAnswer((_) async => expense);
       final done = Completer<void>();
-      when(() => repository.updateExpense(any())).thenAnswer((_) => done.future);
+      when(() => repository.updateExpense(any()))
+          .thenAnswer((_) => done.future);
       await openEditor(tester, id: 'a');
 
       await tester.enterText(
         find.widgetWithText(TextFormField, 'Amount'),
         '30',
+      );
+      await tester.ensureVisible(
+        find.widgetWithText(FilledButton, 'Save changes'),
       );
       await tester.tap(find.widgetWithText(FilledButton, 'Save changes'));
       await tester.pump();
@@ -198,7 +223,8 @@ void main() {
   testWidgets('failed update surfaces an error and stays on the form', (
     tester,
   ) async {
-    when(() => repository.getExpenseById('a')).thenAnswer((_) async => _expense());
+    when(() => repository.getExpenseById('a'))
+        .thenAnswer((_) async => _expense());
     when(() => repository.updateExpense(any())).thenThrow(
       const AppException(
         AppErrorCode.unavailable,
@@ -207,6 +233,9 @@ void main() {
     );
     await openEditor(tester, id: 'a');
     await tester.enterText(find.widgetWithText(TextFormField, 'Amount'), '30');
+    await tester.ensureVisible(
+      find.widgetWithText(FilledButton, 'Save changes'),
+    );
     await tester.tap(find.widgetWithText(FilledButton, 'Save changes'));
     await tester.pumpAndSettle();
     expect(
@@ -223,7 +252,8 @@ void main() {
   testWidgets(
     'leaving with unsaved changes asks for confirmation before discarding',
     (tester) async {
-      when(() => repository.getExpenseById('a')).thenAnswer((_) async => _expense());
+      when(() => repository.getExpenseById('a'))
+          .thenAnswer((_) async => _expense());
       await openEditor(tester, id: 'a');
       await tester.enterText(
         find.widgetWithText(TextFormField, 'Amount'),

@@ -30,8 +30,7 @@ class DashboardView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final summaryAsync = ref.watch(monthlyExpenseSummaryProvider);
-    final month = ref.watch(selectedMonthProvider);
-    final userName = ref.watch(authStateProvider).valueOrNull?.name;
+    final userName = ref.watch(authStateProvider).value?.name;
 
     return RefreshIndicator(
       // The one user-triggered action that re-subscribes to Firestore.
@@ -56,7 +55,8 @@ class DashboardView extends ConsumerWidget {
             ),
           ),
         ),
-        data: (summary) => _DashboardContent(summary: summary, userName: userName),
+        data: (summary) =>
+            _DashboardContent(summary: summary, userName: userName),
       ),
     );
   }
@@ -161,8 +161,10 @@ class _MonthlyTrendChart extends ConsumerWidget {
         ),
         error: (error, stackTrace) =>
             const SizedBox.shrink(key: ValueKey('trend-error')),
-        data: (points) =>
-            MonthlySpendingChart(key: const ValueKey('trend-data'), points: points),
+        data: (points) => MonthlySpendingChart(
+          key: const ValueKey('trend-data'),
+          points: points,
+        ),
       ),
     );
   }

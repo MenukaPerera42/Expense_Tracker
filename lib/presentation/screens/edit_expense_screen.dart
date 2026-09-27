@@ -29,9 +29,7 @@ class EditExpenseScreen extends ConsumerWidget {
       body: SafeArea(
         child: expenseAsync.when(
           loading: () => const Center(
-            child: CircularProgressIndicator(
-              semanticsLabel: 'Loading expense',
-            ),
+            child: CircularProgressIndicator(semanticsLabel: 'Loading expense'),
           ),
           error: (error, _) => StatusView(
             icon: Icons.error_outline,
@@ -99,14 +97,13 @@ class _EditExpenseFormViewState extends ConsumerState<EditExpenseFormView> {
       next,
     ) {
       if (previous?.isLoading == true && next.hasValue && !next.isLoading) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Changes saved.')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('Changes saved.')));
         Navigator.of(context).pop();
       } else if (next.hasError) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(expenseErrorMessage(next.error))));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(expenseErrorMessage(next.error))),
+        );
       }
     });
 
@@ -131,24 +128,25 @@ class _EditExpenseFormViewState extends ConsumerState<EditExpenseFormView> {
           saving: saving,
           submitLabel: 'Save changes',
           onDirtyChanged: (dirty) => setState(() => _dirty = dirty),
-          onSubmit: ({
-            required title,
-            required amount,
-            required category,
-            required date,
-            required note,
-          }) {
-            ref
-                .read(editExpenseControllerProvider.notifier)
-                .submit(
-                  original: widget.expense,
-                  title: title,
-                  amount: amount,
-                  category: category,
-                  date: date,
-                  note: note,
-                );
-          },
+          onSubmit:
+              ({
+                required title,
+                required amount,
+                required category,
+                required date,
+                required note,
+              }) {
+                ref
+                    .read(editExpenseControllerProvider.notifier)
+                    .submit(
+                      original: widget.expense,
+                      title: title,
+                      amount: amount,
+                      category: category,
+                      date: date,
+                      note: note,
+                    );
+              },
         ),
       ),
     );

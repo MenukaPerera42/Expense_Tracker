@@ -12,14 +12,13 @@ import 'date_field.dart';
 /// owner. Building an [Expense] and persisting it differ between creating
 /// (AddExpenseController) and updating (EditExpenseController), so this
 /// widget only ever deals in strings/values, never Firestore or the entity.
-typedef ExpenseFormSubmit =
-    void Function({
-      required String title,
-      required String amount,
-      required ExpenseCategory category,
-      required DateTime date,
-      required String note,
-    });
+typedef ExpenseFormSubmit = void Function({
+  required String title,
+  required String amount,
+  required ExpenseCategory category,
+  required DateTime date,
+  required String note,
+});
 
 /// The Add/Edit expense form: title, amount, category, date, optional note.
 /// Shared by AddExpenseScreen and the expense editor so the fields,
