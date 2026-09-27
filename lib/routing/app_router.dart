@@ -3,9 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../data/app_initialization.dart';
+import '../domain/entities/expense.dart';
 import '../presentation/providers/auth_providers.dart';
 import '../presentation/screens/add_expense_screen.dart';
 import '../presentation/screens/auth_screen.dart';
+import '../presentation/screens/edit_expense_screen.dart';
 import '../presentation/screens/home_screen.dart';
 import '../presentation/screens/splash_screen.dart';
 import '../presentation/widgets/status_view.dart';
@@ -55,6 +57,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         name: AppRouter.addExpenseName,
         builder: (_, _) => const AddExpenseScreen(),
       ),
+      GoRoute(
+        path: AppRouter.editExpensePathPattern,
+        name: AppRouter.editExpenseName,
+        builder: (_, state) =>
+            EditExpenseScreen(expense: state.extra as Expense),
+      ),
     ],
     errorBuilder: (context, state) => Scaffold(
       body: SafeArea(
@@ -82,6 +90,14 @@ abstract final class AppRouter {
   static const homeName = 'home';
   static const addExpensePath = '/expenses/add';
   static const addExpenseName = 'addExpense';
+  static const editExpenseName = 'editExpense';
+
+  /// Route pattern registered with go_router.
+  static const editExpensePathPattern = '/expenses/:id/edit';
+
+  /// Concrete path for a given expense ID. The full [Expense] is passed
+  /// alongside as `extra` so the destination never has to re-fetch it.
+  static String editExpensePath(String id) => '/expenses/$id/edit';
 }
 
 class _RouterRefresh extends ChangeNotifier {

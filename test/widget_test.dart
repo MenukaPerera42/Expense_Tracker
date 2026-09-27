@@ -1,5 +1,8 @@
 import 'dart:async';
 
+import 'package:expense_tracker/data/services/firebase_providers.dart';
+import 'package:expense_tracker/domain/entities/expense.dart';
+import 'package:expense_tracker/domain/repositories/expense_repository.dart';
 import 'package:expense_tracker/presentation/providers/auth_providers.dart';
 import 'package:expense_tracker/domain/entities/auth_user.dart';
 
@@ -10,6 +13,26 @@ import 'package:expense_tracker/routing/app_router.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+/// Trivial stand-in so Home's expense history stream has something to watch
+/// without contacting Firebase; this file is not about expense behavior.
+class _EmptyExpenseRepository implements ExpenseRepository {
+  @override
+  Future<List<Expense>> getExpenses({bool descending = true}) async => [];
+  @override
+  Future<Expense?> getExpenseById(String id) async => null;
+  @override
+  Stream<List<Expense>> watchExpenses({bool descending = true}) =>
+      Stream.value(const []);
+  @override
+  String newExpenseId() => 'unused';
+  @override
+  Future<void> createExpense(Expense expense) async {}
+  @override
+  Future<void> updateExpense(Expense expense) async {}
+  @override
+  Future<void> deleteExpense(String id) async {}
+}
 
 void main() {
   Future<ProviderContainer> mount(
@@ -24,6 +47,9 @@ void main() {
           await ref.watch(appInitializationProvider.future);
           yield const AuthUser(id: 'test');
         }),
+        expenseRepositoryProvider.overrideWith(
+          (ref) async => _EmptyExpenseRepository(),
+        ),
       ],
     );
     addTearDown(container.dispose);
@@ -104,7 +130,7 @@ void main() {
       addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
       await mount(tester);
       await tester.pumpAndSettle();
-      expect(find.text('A clearer view of your spending'), findsOneWidget);
+      expect(find.text('No expenses yet'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   }

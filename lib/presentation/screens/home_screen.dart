@@ -5,8 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../core/constants/app_constants.dart';
 import '../providers/theme_mode_provider.dart';
 import '../providers/auth_providers.dart';
-import '../widgets/status_view.dart';
 import '../../routing/app_router.dart';
+import 'expense_history_view.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -55,15 +55,7 @@ class HomeScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: const SafeArea(
-        child: StatusView(
-          icon: Icons.account_balance_wallet_outlined,
-          title: 'A clearer view of your spending',
-          message:
-              'Your expense workspace is taking shape. '
-              'Expense history is coming next.',
-        ),
-      ),
+      body: const SafeArea(child: ExpenseHistoryView()),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.push(AppRouter.addExpensePath),
         icon: const Icon(Icons.add),

@@ -38,6 +38,12 @@ void main() {
   setUp(() {
     repository = MockExpenseRepository();
     when(() => repository.newExpenseId()).thenReturn('new-expense-id');
+    // Home's expense history view watches this as soon as the app becomes
+    // authenticated; stub it so returning to Home after a save doesn't hit
+    // an unstubbed call.
+    when(
+      () => repository.watchExpenses(),
+    ).thenAnswer((_) => Stream.value(const []));
   });
 
   Future<ProviderContainer> mount(WidgetTester tester) async {
@@ -178,7 +184,6 @@ void main() {
       find.text('The service is temporarily unavailable. Try again.'),
       findsOneWidget,
     );
-    // Still on the form, and the button is enabled again for a retry.
     expect(find.text('Add expense'), findsOneWidget);
     expect(
       tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,

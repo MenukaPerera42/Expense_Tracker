@@ -6,14 +6,37 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:expense_tracker/app.dart';
 import 'package:expense_tracker/core/errors/app_exception.dart';
+import 'package:expense_tracker/data/services/firebase_providers.dart';
 import 'package:expense_tracker/domain/entities/auth_user.dart';
+import 'package:expense_tracker/domain/entities/expense.dart';
 import 'package:expense_tracker/domain/repositories/auth_repository.dart';
+import 'package:expense_tracker/domain/repositories/expense_repository.dart';
 import 'package:expense_tracker/domain/usecases/auth_validation.dart';
 import 'package:expense_tracker/data/app_initialization.dart';
 import 'package:expense_tracker/presentation/providers/auth_providers.dart';
 import 'package:expense_tracker/routing/app_router.dart';
 
 class MockRepository extends Mock implements AuthRepository {}
+
+/// Trivial stand-in so Home's expense history stream has something to watch
+/// without contacting Firebase; this file is about auth, not expenses.
+class _EmptyExpenseRepository implements ExpenseRepository {
+  @override
+  Future<List<Expense>> getExpenses({bool descending = true}) async => [];
+  @override
+  Future<Expense?> getExpenseById(String id) async => null;
+  @override
+  Stream<List<Expense>> watchExpenses({bool descending = true}) =>
+      Stream.value(const []);
+  @override
+  String newExpenseId() => 'unused';
+  @override
+  Future<void> createExpense(Expense expense) async {}
+  @override
+  Future<void> updateExpense(Expense expense) async {}
+  @override
+  Future<void> deleteExpense(String id) async {}
+}
 
 void main() {
   test(
@@ -121,6 +144,9 @@ void main() {
       overrides: [
         appInitializerProvider.overrideWithValue(() async {}),
         authRepositoryProvider.overrideWith((ref) async => repo),
+        expenseRepositoryProvider.overrideWith(
+          (ref) async => _EmptyExpenseRepository(),
+        ),
       ],
       retry: (_, _) => null,
     );
@@ -145,23 +171,23 @@ void main() {
       await tester.pump();
       await tester.pump();
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
-      expect(find.text('A clearer view of your spending'), findsNothing);
+      expect(find.text('Expense Tracker'), findsNothing);
       stream.add(null);
       await tester.pumpAndSettle();
       expect(find.text('Sign in'), findsNWidgets(2));
       container.read(appRouterProvider).go('/');
       await tester.pumpAndSettle();
-      expect(find.text('A clearer view of your spending'), findsNothing);
+      expect(find.text('Expense Tracker'), findsNothing);
       stream.add(const AuthUser(id: 'one'));
       await tester.pumpAndSettle();
-      expect(find.text('A clearer view of your spending'), findsOneWidget);
+      expect(find.text('Expense Tracker'), findsOneWidget);
       container.read(appRouterProvider).go('/register');
       await tester.pumpAndSettle();
       expect(find.text('Create account'), findsNothing);
       stream.addError(StateError('private'));
       await tester.pumpAndSettle();
       expect(find.text('Unable to start'), findsOneWidget);
-      expect(find.text('A clearer view of your spending'), findsNothing);
+      expect(find.text('Expense Tracker'), findsNothing);
     },
   );
   testWidgets(
