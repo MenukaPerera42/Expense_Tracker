@@ -1,0 +1,10 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId}/expenses/{expenseId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      // Enable writes only alongside validated expense schemas in that module.
+      allow write: if false;
+    }
+  }
+}
