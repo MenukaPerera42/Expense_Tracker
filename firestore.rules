@@ -1,29 +1,80 @@
 rules_version = '2';
+
+// Security model: docs/security-model.md. Summary — every expense lives at
+// users/{ownerUid}/expenses/{expenseId}; a request is only ever allowed to
+// touch a document whose ownerUid segment equals request.auth.uid. This is
+// the sole authorization boundary: the Flutter client's own checks (see
+// FirestoreExpenseRepository) are a UX/defense-in-depth layer, not something
+// these rules may assume is true. Anything not explicitly matched below
+// (including the users/{userId} parent document itself, which this app never
+// reads or writes) is denied by Firestore's default-deny behavior.
 service cloud.firestore {
   match /databases/{database}/documents {
     match /users/{userId}/expenses/{expenseId} {
+      // True only for a signed-in request whose token uid matches the
+      // *path* segment — never anything read from request/resource data, so
+      // an attacker can never forge their way into someone else's path by
+      // shaping the document body a particular way.
       function owner() {
         return request.auth != null && request.auth.uid == userId;
       }
+
+      // Field-level integrity for both create and update. Bounds here
+      // duplicate two client-side sources of truth that cannot be shared
+      // with this rules file directly: domain/entities/expense.dart's
+      // structural invariants (non-blank title, finite positive amount) and
+      // domain/usecases/expense_validation.dart's product policy limits
+      // (titleMaxLength, noteMaxLength, maxAmount). If those Dart constants
+      // change, update the literals below in the same change.
       function validExpense() {
         let d = request.resource.data;
         return d.keys().hasAll(['userId', 'title', 'amount', 'category', 'date', 'createdAt', 'updatedAt'])
           && d.keys().hasOnly(['userId', 'title', 'amount', 'category', 'date', 'note', 'createdAt', 'updatedAt'])
+          // The stored owner field must agree with the path it lives at —
+          // this can only ever fail for data written before these rules
+          // existed, or written directly via the Admin SDK (which bypasses
+          // rules entirely); it can never be forged by a client request.
           && d.userId == userId
-          && d.title is string && d.title.matches('.*\\S.*')
-          && d.amount is number && d.amount > 0 && d.amount <= 1.7976931348623157e308
+          && d.title is string
+          && d.title.matches('.*\\S.*')
+          && d.title.size() <= 120
+          && d.amount is number
+          && d.amount > 0
+          // Mirrors ExpenseValidation.maxAmount (999,999,999.99) — the
+          // product's own ceiling, not merely "a finite double" — so a
+          // request bypassing the app entirely (see security-model.md)
+          // can't write a value the app itself would never produce.
+          && d.amount <= 999999999.99
           && d.category in ['food', 'transport', 'shopping', 'bills', 'entertainment', 'health', 'education', 'travel', 'other']
-          && d.date is timestamp && d.createdAt is timestamp && d.updatedAt is timestamp
-          && (!('note' in d) || d.note == null || d.note is string)
+          && d.date is timestamp
+          && d.createdAt is timestamp
+          && d.updatedAt is timestamp
+          && (!('note' in d) || d.note == null || (d.note is string && d.note.size() <= 300))
           && d.updatedAt >= d.createdAt;
       }
+
+      // No `resource.data` condition here on purpose: a `list` query is only
+      // permitted when a rule can decide it from the query path alone,
+      // without reading each candidate document's data. Path-only ownership
+      // means every listing under a signed-in user's own subcollection is
+      // decidable up front, so real-time listeners and getExpenses() never
+      // get a partial or permission-denied result over a valid query.
       allow read: if owner();
+
       allow create: if owner() && validExpense()
+        // Audit timestamps are server-authoritative on create: a client
+        // cannot backdate or postdate either one. (See security-model.md
+        // for why the expense's own user-facing `date` field is
+        // deliberately NOT bounded to <= request.time here.)
         && request.resource.data.createdAt == request.time
         && request.resource.data.updatedAt == request.time;
+
       allow update: if owner() && resource.data.userId == userId && validExpense()
+        // createdAt is immutable after creation; updatedAt must always be
+        // re-stamped by the server, never client-supplied, on every write.
         && request.resource.data.createdAt == resource.data.createdAt
         && request.resource.data.updatedAt == request.time;
+
       allow delete: if owner() && resource.data.userId == userId;
     }
   }

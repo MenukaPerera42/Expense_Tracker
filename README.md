@@ -4,9 +4,11 @@ Android-only Flutter application using the existing Firebase project.
 Authentication, the expense data layer, the full expense editor (add, edit,
 delete, history), the main dashboard with charts, filtering/sorting/
 search of the history list, a Settings screen (theme, currency preference,
-logout, app info), and a UX polish pass (pull-to-refresh, skeleton loading,
+logout, app info), a UX polish pass (pull-to-refresh, skeleton loading,
 consistent snackbars, and empty/error/confirmation-state consistency across
-every screen) are implemented.
+every screen), and a reviewed, hardened, and documented Firestore security
+rules model (see "Security rules module" below and
+`docs/security-model.md`) are implemented.
 
 ## Run
 
@@ -87,8 +89,11 @@ and the UX polish pass (`ExpenseListSkeleton` rendering its configured row
 count without error in light and dark mode, `ScrollableFill` filling short
 content to the viewport height and remaining pull-to-refresh-able even when
 its content doesn't overflow, and the edit/delete row actions meeting a
-44x44 minimum tap target). They do not verify a live Firebase connection.
-Launch on the configured Pixel emulator for that check.
+44x44 minimum tap target). They do not verify a live Firebase connection, and
+— since they mock Firestore/Auth — they do not exercise `firestore.rules`
+either; that's what `firestore-tests/` (a separate Node.js project, `npm
+test` after `npm install`, see its own README) is for. Launch on the
+configured Pixel emulator for a live-connection check.
 
 ## Next modules
 
@@ -633,3 +638,56 @@ already existed.
   all for per-row delete progress or the Add/Edit save buttons, not the list
   itself, so replacing the list's own loading spinner with the skeleton
   didn't require updating them.
+
+## Security rules module
+
+`firestore.rules` was reviewed and hardened, and its security model is now
+fully documented in **`docs/security-model.md`** — read that for the
+complete picture (this section is a summary). The short version: every
+expense lives at `users/{ownerUid}/expenses/{expenseId}`, and the rules'
+`owner()` check — `request.auth.uid == userId`, checked against the *path*,
+never against request data — is the sole authorization boundary for all
+four operations (read, create, update, delete). Nothing in the Flutter
+client is treated as a security enforcement point, per the module's own
+instruction not to rely on UI restrictions.
+
+- **Hardened validation at the rules layer**: `validExpense()` already
+  required the full field set, a non-blank title, a positive numeric
+  amount, a recognized category, and genuine timestamps; this pass added
+  the two bounds it was missing — a 120-character title cap and a
+  300-character note cap — mirroring `ExpenseValidation.titleMaxLength`/
+  `noteMaxLength` exactly, and tightened the amount ceiling from "any
+  finite double" to the same 999,999,999.99 product ceiling
+  `ExpenseValidation.maxAmount` already enforces client-side, so a request
+  that bypasses the app entirely can't write a value the app itself would
+  never produce.
+- **Reviewed field-by-field whether a client can manipulate `userId`,
+  timestamps, `amount`, or required fields** — documented in
+  `docs/security-model.md`'s "Client-side security review" section. Short
+  answer: no, on all four, at both layers (the Dart repository's own checks
+  *and* the rules independently), with the specific attack scenario the
+  rules exist for spelled out explicitly (a valid session used to call
+  Firestore directly, skipping the app).
+- **A considered, documented non-enforcement**: the rules deliberately do
+  *not* pin an expense's user-facing `date` field to `<= request.time` —
+  unlike the audit timestamps, this is a product rule with no security
+  consequence, and enforcing it server-side risks rejecting legitimate
+  submissions over client/server clock skew. Explained in full in
+  `docs/security-model.md`.
+- **Firebase security rules tests**: `firestore-tests/` is a new, separate
+  Node.js project (its own `package.json`) with emulator-backed tests using
+  `@firebase/rules-unit-testing`, covering authentication-required, owner-
+  only access (including two specific `userId`-spoofing attempts), the four
+  timestamp-manipulation cases, five amount-bounds cases, six schema/
+  required-field cases, and two default-deny cases for paths outside
+  `users/{uid}/expenses/*` — the only thing in this repository that
+  actually exercises the rules engine rather than a mock. See
+  `firestore-tests/README.md` for exactly what's covered and how to run it;
+  as disclosed there and in `docs/security-model.md`, these have not been
+  executed in this environment (no working shell here to run `npm
+  install`/the Firebase emulator) and should be run before trusting the
+  rules in production.
+- **No architecture changes**: this pass touched `firestore.rules`, added
+  doc-only cross-references in `ExpenseValidation`, and added the new
+  `firestore-tests/`/`docs/security-model.md` documentation — no Dart
+  application code, data flow, or repository behavior changed.

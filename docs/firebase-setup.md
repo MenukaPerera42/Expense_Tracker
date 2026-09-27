@@ -35,15 +35,20 @@ Expense Tracker project, check these steps and skip anything already configured:
    `users/{uid}/expenses/{id}`, validate the expense schema, require server audit
    timestamps, and preserve createdAt on updates. Other paths remain denied.
    Inspect any existing deployed rules before replacing them. No composite
-   indexes are currently needed; the supplied index file is empty.
+   indexes are currently needed; the supplied index file is empty. See
+   `docs/security-model.md` for the full reasoning behind every clause in
+   `firestore.rules`, and `firestore-tests/` for emulator-backed tests of it.
 4. Rebuild and run on Android (`flutter run`) after adding the native plugins.
    Email/password does not need Google sign-in SHA fingerprints. Authentication
    UI is available in the app; use a test account for a manual smoke test.
 
 No CLI deployment or Firebase Console changes were executed automatically.
-The local security rules have not been emulator-tested in this module; mocked
-SDK tests do not prove backend authorization. Test owner/other-user/signed-out
-access against the rules before releasing the expense feature.
+Mocked Dart SDK tests do not prove backend authorization by themselves —
+see `docs/security-model.md` for the full security model and
+`firestore-tests/` for emulator-backed rules tests that exercise
+owner/other-user/signed-out access against the real rules engine. Those
+tests have not been executed in this environment (no working shell here to
+run the emulator); run them yourself before releasing the expense feature.
 
 ## Optional local emulators
 
@@ -133,3 +138,14 @@ Deploy the updated rules before testing CRUD against Firebase; nothing was
 published automatically. Single-field date ordering needs no composite index.
 Ordinary Dart tests mock Firestore/Auth and transaction callbacks; they do not
 exercise real transaction retries, security rules, or emulator connectivity.
+
+## Security rules module
+
+`firestore.rules` and the full security model — what's enforced, what's
+deliberately not, and the client-side review that backs it up — now have a
+dedicated document: **`docs/security-model.md`**. Read that first for
+anything related to authorization, field validation at the rules layer, or
+whether a given field can be manipulated by a client. `firestore-tests/`
+holds emulator-backed rules tests (see its own README for how to run them);
+they are the only thing in this repository that actually exercises
+`firestore.rules` against the real rules engine rather than a mock.

@@ -46,3 +46,11 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# Node (firestore-tests/ — the Firestore security rules test project)
+node_modules/
+npm-debug.log*
+firebase-debug.log*
+firestore-debug.log*
+ui-debug.log*
+.firebase/

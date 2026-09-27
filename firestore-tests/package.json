@@ -1,0 +1,16 @@
+{
+  "name": "expense-tracker-firestore-rules-tests",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "description": "Emulator-backed unit tests for the app's Firestore security rules (../firestore.rules). Never run against the real expense-tracker-de695 project — see README.md in this folder.",
+  "scripts": {
+    "test": "node --test rules.test.mjs"
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^3.0.4",
+    "firebase": "^11.0.0"
+  }
+}

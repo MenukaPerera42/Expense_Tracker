@@ -2,6 +2,13 @@
 /// choices (max lengths, "no future dates"), distinct from the [Expense]
 /// entity's own structural invariants (non-blank title, finite positive
 /// amount, consistent timestamps) enforced in the domain layer.
+///
+/// [titleMaxLength], [noteMaxLength], and [maxAmount] are also mirrored as
+/// literals in `firestore.rules` (`validExpense()`), since Firestore's rules
+/// language cannot import Dart constants. If any of the three change here,
+/// update the matching literal there in the same change — see
+/// `docs/security-model.md` for why the backend must enforce these
+/// independently of this client-side validator.
 abstract final class ExpenseValidation {
   /// Generous enough for any real expense title, short enough to keep list
   /// rows and cards from wrapping awkwardly.
@@ -51,6 +58,11 @@ abstract final class ExpenseValidation {
   /// today so the picker never offers an invalid choice; this validator is
   /// the defensive second check for any date that reaches submission by
   /// another path.
+  ///
+  /// Deliberately not re-enforced in `firestore.rules` — see
+  /// `docs/security-model.md`'s "Deliberately not enforced at the rules
+  /// layer" section for why (client/server clock skew would reject
+  /// legitimate submissions).
   static String? date(DateTime value, {DateTime? now}) {
     if (value.isAfter(now ?? DateTime.now())) {
       return 'Date cannot be in the future.';
