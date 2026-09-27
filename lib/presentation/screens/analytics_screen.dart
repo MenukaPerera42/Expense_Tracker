@@ -20,7 +20,13 @@ class AnalyticsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final summaryAsync = ref.watch(monthlyExpenseSummaryProvider);
-    final pointsAsync = ref.watch(monthlySpendingChartProvider);
+    final timeframe = ref.watch(analyticsTimeframeProvider);
+    
+    final AsyncValue<List<SpendingPoint>> pointsAsync = switch (timeframe) {
+      ChartTimeframe.day => ref.watch(dailySpendingChartProvider),
+      ChartTimeframe.week => ref.watch(weeklySpendingChartProvider),
+      ChartTimeframe.month => ref.watch(monthlySpendingChartProvider),
+    };
 
     return summaryAsync.when(
       loading: () => const ScrollableFill(
@@ -38,19 +44,20 @@ class AnalyticsScreen extends ConsumerWidget {
         ),
       ),
       data: (summary) =>
-          _AnalyticsBody(summary: summary, pointsAsync: pointsAsync),
+          _AnalyticsBody(summary: summary, pointsAsync: pointsAsync, timeframe: timeframe),
     );
   }
 }
 
-class _AnalyticsBody extends StatelessWidget {
-  const _AnalyticsBody({required this.summary, required this.pointsAsync});
+class _AnalyticsBody extends ConsumerWidget {
+  const _AnalyticsBody({required this.summary, required this.pointsAsync, required this.timeframe});
 
   final MonthlyExpenseSummary summary;
-  final AsyncValue<List<MonthlySpendingPoint>> pointsAsync;
+  final AsyncValue<List<SpendingPoint>> pointsAsync;
+  final ChartTimeframe timeframe;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final tt = Theme.of(context).textTheme;
     final cs = Theme.of(context).colorScheme;
 
@@ -77,10 +84,32 @@ class _AnalyticsBody extends StatelessWidget {
         _SummaryRow(summary: summary),
         const SizedBox(height: AppSpacing.large),
 
-        // ── 6-month trend line chart ───────────────────────────────────
-        _SectionLabel(title: 'Spending Trend', subtitle: 'Last 6 months'),
+        // ── Spending trend line chart ───────────────────────────────────
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            _SectionLabel(
+              title: 'Spending Trend',
+              subtitle: timeframe == ChartTimeframe.month ? 'Last 6 months' : 'This month',
+            ),
+            SegmentedButton<ChartTimeframe>(
+              segments: const [
+                ButtonSegment(value: ChartTimeframe.day, label: Text('D')),
+                ButtonSegment(value: ChartTimeframe.week, label: Text('W')),
+                ButtonSegment(value: ChartTimeframe.month, label: Text('M')),
+              ],
+              selected: {timeframe},
+              onSelectionChanged: (set) => ref.read(analyticsTimeframeProvider.notifier).setTimeframe(set.first),
+              showSelectedIcon: false,
+              style: SegmentedButton.styleFrom(
+                visualDensity: VisualDensity.compact,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+              ),
+            ),
+          ],
+        ),
         const SizedBox(height: AppSpacing.small),
-        _TrendCard(pointsAsync: pointsAsync),
+        _TrendCard(pointsAsync: pointsAsync, timeframe: timeframe),
         const SizedBox(height: AppSpacing.large),
 
         // ── Category breakdown ─────────────────────────────────────────
@@ -217,8 +246,9 @@ class _InfoTile extends StatelessWidget {
 // ─── 6-month line chart card ─────────────────────────────────────────────────
 
 class _TrendCard extends StatelessWidget {
-  const _TrendCard({required this.pointsAsync});
-  final AsyncValue<List<MonthlySpendingPoint>> pointsAsync;
+  const _TrendCard({required this.pointsAsync, required this.timeframe});
+  final AsyncValue<List<SpendingPoint>> pointsAsync;
+  final ChartTimeframe timeframe;
 
   @override
   Widget build(BuildContext context) {
@@ -294,15 +324,28 @@ class _TrendCard extends StatelessWidget {
                     sideTitles: SideTitles(
                       showTitles: true,
                       reservedSize: 28,
+                      interval: timeframe == ChartTimeframe.day ? 5 : 1,
                       getTitlesWidget: (value, meta) {
                         final i = value.round();
                         if (i < 0 || i >= points.length) {
                           return const SizedBox.shrink();
                         }
+                        
+                        String label = '';
+                        final pt = points[i];
+                        if (timeframe == ChartTimeframe.day && pt is DailySpendingPoint) {
+                          if (pt.day % 5 != 0 && pt.day != 1) return const SizedBox.shrink();
+                          label = '${pt.day}';
+                        } else if (timeframe == ChartTimeframe.week && pt is WeeklySpendingPoint) {
+                          label = 'W${pt.week}';
+                        } else if (timeframe == ChartTimeframe.month && pt is MonthlySpendingPoint) {
+                          label = DateFormat.MMM().format(pt.month);
+                        }
+
                         return Padding(
                           padding: const EdgeInsets.only(top: 8),
                           child: Text(
-                            DateFormat.MMM().format(points[i].month),
+                            label,
                             style: tt.labelSmall?.copyWith(
                               color: cs.onSurfaceVariant,
                             ),
@@ -317,13 +360,21 @@ class _TrendCard extends StatelessWidget {
                     getTooltipColor: (_) => cs.inverseSurface,
                     getTooltipItems: (spots) => spots
                         .map(
-                          (s) => LineTooltipItem(
-                            CurrencyConfig.defaultCurrency.format(s.y),
-                            tt.labelSmall!.copyWith(
-                              color: cs.onInverseSurface,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
+                          (s) {
+                            final pt = points[s.x.toInt()];
+                            String prefix = '';
+                            if (pt is DailySpendingPoint) prefix = 'Day ${pt.day}\n';
+                            if (pt is WeeklySpendingPoint) prefix = 'Week ${pt.week}\n';
+                            if (pt is MonthlySpendingPoint) prefix = '${DateFormat.MMMM().format(pt.month)}\n';
+                            
+                            return LineTooltipItem(
+                              '$prefix${CurrencyConfig.defaultCurrency.format(s.y)}',
+                              tt.labelSmall!.copyWith(
+                                color: cs.onInverseSurface,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            );
+                          },
                         )
                         .toList(),
                   ),
@@ -530,3 +581,15 @@ class _MonthChip extends ConsumerWidget {
     );
   }
 }
+
+enum ChartTimeframe { day, week, month }
+
+class AnalyticsTimeframeController extends Notifier<ChartTimeframe> {
+  @override
+  ChartTimeframe build() => ChartTimeframe.day;
+  void setTimeframe(ChartTimeframe t) => state = t;
+}
+
+final analyticsTimeframeProvider = NotifierProvider<AnalyticsTimeframeController, ChartTimeframe>(
+  AnalyticsTimeframeController.new,
+);

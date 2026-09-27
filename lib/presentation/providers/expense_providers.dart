@@ -302,3 +302,21 @@ final monthlySpendingChartProvider =
         (list) => ExpenseChartData.monthlySpending(list, endMonth: month),
       );
     });
+
+final dailySpendingChartProvider =
+    Provider<AsyncValue<List<DailySpendingPoint>>>((ref) {
+      final month = ref.watch(selectedMonthProvider);
+      final expenses = ref.watch(expenseListProvider);
+      return expenses.whenData(
+        (list) => ExpenseChartData.dailySpending(list, month: month),
+      );
+    });
+
+final weeklySpendingChartProvider =
+    Provider<AsyncValue<List<WeeklySpendingPoint>>>((ref) {
+      final month = ref.watch(selectedMonthProvider);
+      final expenses = ref.watch(expenseListProvider);
+      return expenses.whenData(
+        (list) => ExpenseChartData.weeklySpending(list, month: month),
+      );
+    });

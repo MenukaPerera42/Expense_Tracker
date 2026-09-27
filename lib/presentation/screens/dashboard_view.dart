@@ -337,7 +337,7 @@ class _SpendingLineChart extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
-    final pointsAsync = ref.watch(monthlySpendingChartProvider);
+    final pointsAsync = ref.watch(dailySpendingChartProvider);
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.medium),
@@ -403,15 +403,20 @@ class _SpendingLineChart extends ConsumerWidget {
                     sideTitles: SideTitles(
                       showTitles: true,
                       reservedSize: 28,
+                      interval: 5, // Show a label roughly every 5 days
                       getTitlesWidget: (value, meta) {
                         final i = value.round();
                         if (i < 0 || i >= points.length) {
                           return const SizedBox.shrink();
                         }
+                        // Only show every 5th day or first/last to avoid crowding
+                        if (points[i].day % 5 != 0 && points[i].day != 1) {
+                          return const SizedBox.shrink();
+                        }
                         return Padding(
                           padding: const EdgeInsets.only(top: 8),
                           child: Text(
-                            DateFormat.MMM().format(points[i].month),
+                            '${points[i].day}',
                             style: tt.labelSmall?.copyWith(
                               color: cs.onSurfaceVariant,
                             ),
@@ -427,7 +432,7 @@ class _SpendingLineChart extends ConsumerWidget {
                     getTooltipItems: (touchedSpots) => touchedSpots
                         .map(
                           (s) => LineTooltipItem(
-                            CurrencyConfig.defaultCurrency.format(s.y),
+                            'Day ${points[s.x.toInt()].day}\n${CurrencyConfig.defaultCurrency.format(s.y)}',
                             tt.labelSmall!.copyWith(
                               color: cs.onInverseSurface,
                               fontWeight: FontWeight.w600,
