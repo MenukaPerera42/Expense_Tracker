@@ -271,8 +271,8 @@ class _PersistentNavBar extends StatelessWidget {
               child: Container(
                 width: 64,
                 height: 64,
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
                     colors: [
                       Color(0xFF0D47A1),
                       Color(0xFF002171),
@@ -281,7 +281,13 @@ class _PersistentNavBar extends StatelessWidget {
                     end: Alignment.bottomRight,
                   ),
                   shape: BoxShape.circle,
-                  // Shadow removed as requested
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF0D47A1).withOpacity(0.4),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
                 child: const Icon(
                   Icons.add_rounded,

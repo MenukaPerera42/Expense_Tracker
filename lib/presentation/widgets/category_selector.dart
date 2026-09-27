@@ -109,7 +109,7 @@ class _CategoryPill extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final catColor = colorForCategory(category);
+    final activeColor = theme.colorScheme.primary;
 
     // Unselected colors matching the new Apple-style inputs
     final unselectedBg = isDark ? const Color(0xFF1E293B) : Colors.white;
@@ -128,16 +128,16 @@ class _CategoryPill extends StatelessWidget {
         curve: Curves.easeOutCubic,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? catColor : unselectedBg,
+          color: isSelected ? activeColor : unselectedBg,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected ? catColor : unselectedBorder,
+            color: isSelected ? activeColor : unselectedBorder,
             width: 1.5,
           ),
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: catColor.withOpacity(0.4),
+                    color: activeColor.withOpacity(0.4),
                     blurRadius: 8,
                     offset: const Offset(0, 3),
                   ),
