@@ -4,6 +4,10 @@ import '../../core/errors/app_exception.dart';
 
 abstract final class FirebaseErrorMapper {
   static AppException map(FirebaseException error) => switch (error.code) {
+    'already-exists' || 'aborted' => const AppException(
+      AppErrorCode.conflict,
+      'This expense changed. Refresh and try again.',
+    ),
     'invalid-credential' ||
     'wrong-password' ||
     'user-not-found' ||

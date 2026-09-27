@@ -11,7 +11,7 @@ Startup initializes Core through `FirebaseServices`, before the asynchronous
 SDK providers become available. Data sources take SDK instances in constructors;
 ordinary unit tests use mocktail and never contact Firebase. Firebase errors are
 mapped to safe application exceptions. Unexpected programming errors propagate.
-Future feature repositories will translate Firebase User/maps into domain types.
+Authentication and expense repositories translate Firebase values into domain types.
 
 ## Remaining Console steps (not performed by this change)
 
@@ -31,9 +31,9 @@ Expense Tracker project, check these steps and skip anything already configured:
    firebase deploy --only firestore:rules,firestore:indexes --project expense-tracker-de695
    ```
 
-   The foundation allows authenticated owner-only reads of
-   `users/{uid}/expenses/{id}` and denies all writes and other paths. Writes
-   intentionally remain disabled until the expense module adds schema validation.
+   The rules allow authenticated owner-only CRUD at
+   `users/{uid}/expenses/{id}`, validate the expense schema, require server audit
+   timestamps, and preserve createdAt on updates. Other paths remain denied.
    Inspect any existing deployed rules before replacing them. No composite
    indexes are currently needed; the supplied index file is empty.
 4. Rebuild and run on Android (`flutter run`) after adding the native plugins.
@@ -103,3 +103,33 @@ Enable Email/Password in the existing project's Authentication sign-in methods
 before using the forms; no new Firebase configuration or Firestore writes are
 required. Device restart persistence still needs a manual emulator/device check;
 unit tests simulate the SDK's restored-session event without real credentials.
+
+## Expense repository
+
+Inject `expenseRepositoryProvider` to obtain the domain `ExpenseRepository`.
+Firestore stays in the data layer. All paths derive from Firebase Auth's current
+user; caller-supplied owner IDs are checked, never used to select a collection.
+
+- `getExpenses(descending: true)` defaults to newest-first by date; false gives
+  oldest-first. `getExpenseById` returns null for a missing document.
+- Reads explicitly request the server: offline/network failures are surfaced as
+  application failures rather than silently serving stale one-shot results.
+- `createExpense` accepts an Expense with a stable caller-generated ID and rejects
+  an existing ID atomically. Client createdAt/updatedAt values are ignored.
+- `updateExpense` preserves stored createdAt and userId, overwrites editable
+  fields (including clearing note), and sets updatedAt on the server.
+- `deleteExpense` and update report notFound for missing documents.
+- Mutations use transactions, require connectivity, and propagate mapped failures.
+  A session change while awaiting a commit reports unauthenticated even if the
+  server already committed; refresh on next sign-in before retrying a mutation.
+- `watchExpenses` emits immutable lists and permits Firestore's committed cached
+  snapshots. It skips pending-write snapshots until server audit timestamps
+  resolve, with metadata updates enabled. It terminates with a mapped error on
+  SDK failure or an authentication change and cancels both subscriptions.
+- Malformed records fail explicitly instead of silently disappearing. Conflicting
+  ownership is rejected. No client-side filtering is used as authorization.
+
+Deploy the updated rules before testing CRUD against Firebase; nothing was
+published automatically. Single-field date ordering needs no composite index.
+Ordinary Dart tests mock Firestore/Auth and transaction callbacks; they do not
+exercise real transaction retries, security rules, or emulator connectivity.

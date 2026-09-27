@@ -1,9 +1,12 @@
 # Data layer
 
-`services/` owns Firebase startup, SDK providers, and safe error translation.
-`datasources/` contains injectable Auth and owner-scoped Firestore SDK boundaries.
-Providers await application initialization before exposing SDK instances.
-Presentation must not access Firebase SDKs directly. Feature repositories will
-map SDK types into domain entities when those modules are implemented.
+`services/` owns Firebase startup, dependency injection, and safe error mapping.
+`repositories/` implements domain AuthRepository and ExpenseRepository contracts.
+`models/expense_mapper.dart` translates JSON/Firestore data to immutable expenses.
 
-See ../../docs/firebase-setup.md for Console setup, emulators, and rule deployment.
+Use `expenseRepositoryProvider` for new expense features. The earlier raw
+FirestoreDataSource is retained for compatibility; the typed repository is the
+supported CRUD API. Presentation must depend on repositories, not Firebase SDKs.
+
+See ../../docs/firebase-setup.md for repository semantics, Console configuration,
+emulators, rules deployment, and testing limitations.

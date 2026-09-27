@@ -9,6 +9,8 @@ enum AppErrorCode {
   unavailable,
   rateLimited,
   notFound,
+  invalidData,
+  conflict,
   configuration,
   unknown,
 }

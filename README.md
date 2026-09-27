@@ -95,4 +95,4 @@ feature that uses them. Empty directories and speculative classes are omitted.
 Firebase Auth and Cloud Firestore dependencies and injectable data sources are now
 installed. See [Firebase setup](docs/firebase-setup.md) for exact remaining Console
 steps, local emulator configuration, rule deployment, and testing limitations.
-Authentication UI is implemented. Expense writes are not implemented yet.
+Authentication UI is implemented. The expense data layer supports CRUD and streams; expense UI is not implemented yet.
