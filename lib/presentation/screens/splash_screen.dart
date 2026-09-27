@@ -15,26 +15,31 @@ class SplashScreen extends ConsumerWidget {
     final failed = startup.hasError || auth.hasError;
     return Scaffold(
       body: SafeArea(
-        child: failed
-            ? StatusView(
-                icon: Icons.cloud_off_outlined,
-                title: 'Unable to start',
-                message: authErrorMessage(startup.error ?? auth.error),
-                action: FilledButton(
-                  onPressed: () {
-                    ref.invalidate(appInitializationProvider);
-                    ref.invalidate(firebaseAuthProvider);
-                    ref.invalidate(authRepositoryProvider);
-                    ref.invalidate(authStateProvider);
-                  },
-                  child: const Text('Retry'),
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 200),
+          child: failed
+              ? StatusView(
+                  key: const ValueKey('splash-failed'),
+                  icon: Icons.cloud_off_outlined,
+                  title: 'Unable to start',
+                  message: authErrorMessage(startup.error ?? auth.error),
+                  action: FilledButton(
+                    onPressed: () {
+                      ref.invalidate(appInitializationProvider);
+                      ref.invalidate(firebaseAuthProvider);
+                      ref.invalidate(authRepositoryProvider);
+                      ref.invalidate(authStateProvider);
+                    },
+                    child: const Text('Retry'),
+                  ),
+                )
+              : const Center(
+                  key: ValueKey('splash-loading'),
+                  child: CircularProgressIndicator(
+                    semanticsLabel: 'Restoring your session',
+                  ),
                 ),
-              )
-            : const Center(
-                child: CircularProgressIndicator(
-                  semanticsLabel: 'Restoring your session',
-                ),
-              ),
+        ),
       ),
     );
   }

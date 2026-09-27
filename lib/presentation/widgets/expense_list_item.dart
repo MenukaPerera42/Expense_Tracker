@@ -99,13 +99,25 @@ class ExpenseListItem extends ConsumerWidget {
                     children: [
                       IconButton(
                         tooltip: 'Edit expense',
-                        visualDensity: VisualDensity.compact,
+                        // A real 44x44 minimum tap target (rather than the
+                        // visually-compact default) even though the icon
+                        // itself stays small, so two icons fit side by side
+                        // without shrinking below a comfortable touch size.
+                        constraints: const BoxConstraints(
+                          minWidth: 44,
+                          minHeight: 44,
+                        ),
+                        padding: EdgeInsets.zero,
                         onPressed: deleting ? null : onEdit,
                         icon: const Icon(Icons.edit_outlined, size: 20),
                       ),
                       IconButton(
                         tooltip: 'Delete expense',
-                        visualDensity: VisualDensity.compact,
+                        constraints: const BoxConstraints(
+                          minWidth: 44,
+                          minHeight: 44,
+                        ),
+                        padding: EdgeInsets.zero,
                         onPressed: deleting
                             ? null
                             : () => _confirmDelete(context, ref),

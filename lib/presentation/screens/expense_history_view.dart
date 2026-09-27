@@ -7,7 +7,9 @@ import '../../routing/app_router.dart';
 import '../providers/expense_providers.dart';
 import '../widgets/expense_filter_bar.dart';
 import '../widgets/expense_list_item.dart';
+import '../widgets/expense_list_skeleton.dart';
 import '../widgets/expense_search_field.dart';
+import '../widgets/scrollable_fill.dart';
 import '../widgets/status_view.dart';
 
 /// The main workspace content: the signed-in user's expense history, newest
@@ -51,110 +53,125 @@ class ExpenseHistoryView extends ConsumerWidget {
     );
     final filtered = ref.watch(filteredExpenseListProvider);
 
-    return filtered.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, _) => StatusView(
-        icon: Icons.error_outline,
-        title: 'Something went wrong',
-        message: expenseErrorMessage(error),
-        action: FilledButton(
-          onPressed: () => ref.invalidate(expenseListProvider),
-          child: const Text('Retry'),
+    return RefreshIndicator(
+      // Mirrors the dashboard's pull-to-refresh: the one user-triggered
+      // action that re-subscribes to Firestore. Filtering/searching/sorting
+      // never do.
+      onRefresh: () => ref.refresh(expenseListProvider.future),
+      child: filtered.when(
+        loading: () => const ExpenseListSkeleton(),
+        error: (error, _) => ScrollableFill(
+          child: StatusView(
+            icon: Icons.error_outline,
+            title: 'Something went wrong',
+            message: expenseErrorMessage(error),
+            action: FilledButton(
+              onPressed: () => ref.invalidate(expenseListProvider),
+              child: const Text('Retry'),
+            ),
+          ),
         ),
-      ),
-      data: (expenses) {
-        if (!hasAnyExpenses) {
-          return StatusView(
-            icon: Icons.receipt_long_outlined,
-            title: 'No expenses yet',
-            message: 'Add your first expense to start tracking your spending.',
-            action: FilledButton.icon(
-              onPressed: () => context.push(AppRouter.addExpensePath),
-              icon: const Icon(Icons.add),
-              label: const Text('Add expense'),
-            ),
+        data: (expenses) {
+          if (!hasAnyExpenses) {
+            return ScrollableFill(
+              child: StatusView(
+                icon: Icons.receipt_long_outlined,
+                title: 'No expenses yet',
+                message:
+                    'Add your first expense to start tracking your spending.',
+                action: FilledButton.icon(
+                  onPressed: () => context.push(AppRouter.addExpensePath),
+                  icon: const Icon(Icons.add),
+                  label: const Text('Add expense'),
+                ),
+              ),
+            );
+          }
+          final searchActive = ref.watch(
+            expenseSearchQueryProvider.select((query) => query.trim().isNotEmpty),
           );
-        }
-        final searchActive = ref.watch(
-          expenseSearchQueryProvider.select((query) => query.trim().isNotEmpty),
-        );
-        final filterActive = ref.watch(
-          expenseFilterProvider.select((filter) => filter.isActive),
-        );
+          final filterActive = ref.watch(
+            expenseFilterProvider.select((filter) => filter.isActive),
+          );
 
-        return Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.medium,
-                AppSpacing.medium,
-                AppSpacing.medium,
-                0,
+          return Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.medium,
+                  AppSpacing.medium,
+                  AppSpacing.medium,
+                  0,
+                ),
+                child: Column(
+                  children: [
+                    const ExpenseSearchField(),
+                    const SizedBox(height: AppSpacing.small),
+                    const ExpenseFilterBar(),
+                  ],
+                ),
               ),
-              child: Column(
-                children: [
-                  const ExpenseSearchField(),
-                  const SizedBox(height: AppSpacing.small),
-                  const ExpenseFilterBar(),
-                ],
-              ),
-            ),
-            Expanded(
-              child: expenses.isEmpty
-                  ? StatusView(
-                      icon: Icons.filter_alt_off_outlined,
-                      title: 'No matching expenses',
-                      message:
-                          'Try a different search term, category, date, or range.',
-                      action: FilledButton(
-                        onPressed: () {
-                          if (searchActive) {
-                            ref
-                                .read(expenseSearchQueryProvider.notifier)
-                                .clear();
-                          }
-                          if (filterActive) {
-                            ref.read(expenseFilterProvider.notifier).clear();
-                          }
-                        },
-                        child: Text(
-                          searchActive && filterActive
-                              ? 'Clear search & filters'
-                              : searchActive
-                              ? 'Clear search'
-                              : 'Clear filters',
-                        ),
-                      ),
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.fromLTRB(
-                        AppSpacing.medium,
-                        AppSpacing.medium,
-                        AppSpacing.medium,
-                        // Extra bottom padding keeps the last card clear of the FAB.
-                        AppSpacing.extraLarge * 2,
-                      ),
-                      itemCount: expenses.length,
-                      itemBuilder: (context, index) {
-                        final expense = expenses[index];
-                        return Padding(
-                          key: ValueKey(expense.id),
-                          padding: const EdgeInsets.only(
-                            bottom: AppSpacing.small,
-                          ),
-                          child: ExpenseListItem(
-                            expense: expense,
-                            onEdit: () => context.push(
-                              AppRouter.editExpensePath(expense.id),
+              Expanded(
+                child: expenses.isEmpty
+                    ? ScrollableFill(
+                        child: StatusView(
+                          icon: Icons.filter_alt_off_outlined,
+                          title: 'No matching expenses',
+                          message:
+                              'Try a different search term, category, date, or range.',
+                          action: FilledButton(
+                            onPressed: () {
+                              if (searchActive) {
+                                ref
+                                    .read(expenseSearchQueryProvider.notifier)
+                                    .clear();
+                              }
+                              if (filterActive) {
+                                ref
+                                    .read(expenseFilterProvider.notifier)
+                                    .clear();
+                              }
+                            },
+                            child: Text(
+                              searchActive && filterActive
+                                  ? 'Clear search & filters'
+                                  : searchActive
+                                  ? 'Clear search'
+                                  : 'Clear filters',
                             ),
                           ),
-                        );
-                      },
-                    ),
-            ),
-          ],
-        );
-      },
+                        ),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.fromLTRB(
+                          AppSpacing.medium,
+                          AppSpacing.medium,
+                          AppSpacing.medium,
+                          // Extra bottom padding keeps the last card clear of the FAB.
+                          AppSpacing.extraLarge * 2,
+                        ),
+                        itemCount: expenses.length,
+                        itemBuilder: (context, index) {
+                          final expense = expenses[index];
+                          return Padding(
+                            key: ValueKey(expense.id),
+                            padding: const EdgeInsets.only(
+                              bottom: AppSpacing.small,
+                            ),
+                            child: ExpenseListItem(
+                              expense: expense,
+                              onEdit: () => context.push(
+                                AppRouter.editExpensePath(expense.id),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 }

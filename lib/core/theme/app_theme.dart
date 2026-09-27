@@ -73,6 +73,19 @@ abstract final class AppTheme {
         shape: shape,
         clipBehavior: Clip.antiAlias,
       ),
+      // One consistent look for every SnackBar/toast in the app (success and
+      // error feedback alike) rather than each call site styling its own.
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(_cornerRadius / 2),
+        ),
+        backgroundColor: colors.inverseSurface,
+        contentTextStyle: base.textTheme.bodyMedium?.copyWith(
+          color: colors.onInverseSurface,
+        ),
+        actionTextColor: colors.inversePrimary,
+      ),
     );
   }
 }

@@ -16,6 +16,7 @@ import '../widgets/category_pie_chart.dart';
 import '../widgets/category_summary_list.dart';
 import '../widgets/expense_list_item.dart';
 import '../widgets/monthly_spending_chart.dart';
+import '../widgets/scrollable_fill.dart';
 import '../widgets/status_view.dart';
 
 /// Home's body: current-month spending at a glance, with the ability to
@@ -37,10 +38,14 @@ class DashboardView extends ConsumerWidget {
       // Switching months (below) never does this.
       onRefresh: () => ref.refresh(expenseListProvider.future),
       child: summaryAsync.when(
-        loading: () => const _ScrollableFill(
-          child: Center(child: CircularProgressIndicator()),
+        loading: () => const ScrollableFill(
+          child: Center(
+            child: CircularProgressIndicator(
+              semanticsLabel: 'Loading your spending summary',
+            ),
+          ),
         ),
-        error: (error, _) => _ScrollableFill(
+        error: (error, _) => ScrollableFill(
           child: StatusView(
             icon: Icons.error_outline,
             title: 'Something went wrong',
@@ -81,6 +86,8 @@ class _DashboardContent extends ConsumerWidget {
               ? greeting
               : '$greeting, ${userName!.trim()}',
           style: theme.textTheme.headlineSmall,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
         ),
         const SizedBox(height: AppSpacing.large),
         const _MonthSelector(),
@@ -140,13 +147,23 @@ class _MonthlyTrendChart extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final pointsAsync = ref.watch(monthlySpendingChartProvider);
-    return pointsAsync.when(
-      loading: () => const SizedBox(
-        height: 96,
-        child: Center(child: CircularProgressIndicator()),
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 150),
+      child: pointsAsync.when(
+        loading: () => const SizedBox(
+          key: ValueKey('trend-loading'),
+          height: 96,
+          child: Center(
+            child: CircularProgressIndicator(
+              semanticsLabel: 'Loading monthly trend',
+            ),
+          ),
+        ),
+        error: (error, stackTrace) =>
+            const SizedBox.shrink(key: ValueKey('trend-error')),
+        data: (points) =>
+            MonthlySpendingChart(key: const ValueKey('trend-data'), points: points),
       ),
-      error: (error, stackTrace) => const SizedBox.shrink(),
-      data: (points) => MonthlySpendingChart(points: points),
     );
   }
 }
@@ -167,9 +184,14 @@ class _MonthSelector extends ConsumerWidget {
               ref.read(selectedMonthProvider.notifier).previousMonth(),
           icon: const Icon(Icons.chevron_left),
         ),
-        Text(
-          DateFormat.yMMMM().format(month),
-          style: Theme.of(context).textTheme.titleMedium,
+        Expanded(
+          child: Text(
+            DateFormat.yMMMM().format(month),
+            style: Theme.of(context).textTheme.titleMedium,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
         IconButton(
           tooltip: 'Next month',
@@ -246,28 +268,6 @@ class _EmptyMonth extends StatelessWidget {
             label: const Text('Add expense'),
           ),
         ),
-      ),
-    );
-  }
-}
-
-/// Keeps loading/error content usable with [RefreshIndicator], which
-/// requires a scrollable descendant to detect the pull gesture.
-class _ScrollableFill extends StatelessWidget {
-  const _ScrollableFill({required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) => ListView(
-        children: [
-          ConstrainedBox(
-            constraints: BoxConstraints(minHeight: constraints.maxHeight),
-            child: child,
-          ),
-        ],
       ),
     );
   }

@@ -28,7 +28,11 @@ class EditExpenseScreen extends ConsumerWidget {
       appBar: AppBar(title: const Text('Edit expense')),
       body: SafeArea(
         child: expenseAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => const Center(
+            child: CircularProgressIndicator(
+              semanticsLabel: 'Loading expense',
+            ),
+          ),
           error: (error, _) => StatusView(
             icon: Icons.error_outline,
             title: 'Something went wrong',

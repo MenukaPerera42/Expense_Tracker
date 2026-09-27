@@ -3,8 +3,10 @@
 Android-only Flutter application using the existing Firebase project.
 Authentication, the expense data layer, the full expense editor (add, edit,
 delete, history), the main dashboard with charts, filtering/sorting/
-search of the history list, and a Settings screen (theme, currency
-preference, logout, app info) are implemented.
+search of the history list, a Settings screen (theme, currency preference,
+logout, app info), and a UX polish pass (pull-to-refresh, skeleton loading,
+consistent snackbars, and empty/error/confirmation-state consistency across
+every screen) are implemented.
 
 ## Run
 
@@ -80,9 +82,13 @@ transformation, and that each chart renders without error in both light and
 dark mode), and Settings (theme mode state, restoring a persisted theme mode,
 setting a theme mode persisting it, switching between all three modes,
 currency preference state/persistence, the Settings screen's appearance
-control, currency picker, logout confirm/cancel flow, and app info display).
-They do not verify a live Firebase connection. Launch on the configured Pixel
-emulator for that check.
+control, currency picker, logout confirm/cancel flow, and app info display),
+and the UX polish pass (`ExpenseListSkeleton` rendering its configured row
+count without error in light and dark mode, `ScrollableFill` filling short
+content to the viewport height and remaining pull-to-refresh-able even when
+its content doesn't overflow, and the edit/delete row actions meeting a
+44x44 minimum tap target). They do not verify a live Firebase connection.
+Launch on the configured Pixel emulator for that check.
 
 ## Next modules
 
@@ -542,3 +548,88 @@ confirmed "Log out", so both remain valid ways to sign out.
   now calls `SharedPreferences.setMockInitialValues({})` before pumping,
   since both new controllers now depend on `shared_preferences` during
   startup.
+
+## UX polish pass
+
+A pass over every existing screen for spacing, typography, alignment,
+keyboard behavior, SafeArea, loading/empty/error states, button states,
+touch targets, accessibility, dark mode, responsiveness, scrolling, form
+usability, confirmation dialogs, and success feedback — deliberately no new
+features or architecture changes, only consistency and polish on what
+already existed.
+
+- **Pull-to-refresh everywhere the dashboard already had it**: the dashboard
+  had `RefreshIndicator` from its own module; the expense history screen
+  (`/expenses`, `ExpenseHistoryView`) did not. It now wraps its whole body in
+  the same `RefreshIndicator` → `ref.refresh(expenseListProvider.future)`
+  pattern, available in every state (loading, error, empty, no-matches,
+  loaded) via a new shared `ScrollableFill` widget
+  (`presentation/widgets/scrollable_fill.dart`, extracted from the private
+  helper the dashboard already had) that gives non-scrollable content (a
+  spinner, a `StatusView`) a scrollable ancestor with
+  `AlwaysScrollableScrollPhysics` — needed because `RefreshIndicator` only
+  detects its pull gesture through a scrollable descendant, and short
+  content that doesn't overflow its viewport doesn't register a drag at all
+  under the default scroll physics. `test/presentation/ux_polish_test.dart`
+  covers this directly: a `ScrollableFill` wrapping short, non-overflowing
+  content still triggers `onRefresh` when dragged.
+- **A real skeleton loader for the expense list**: the history screen's
+  loading state was previously a bare centered spinner; it's now
+  `ExpenseListSkeleton` (`presentation/widgets/expense_list_skeleton.dart`),
+  a handful of card-shaped placeholder rows sized like `ExpenseListItem`.
+  It's deliberately *static*, not shimmering/animated — the module's own
+  instruction to avoid excessive animation — so it's a shape-of-the-content
+  hint rather than a moving distraction. The dashboard's own loading state
+  (a different, non-list shape) keeps its centered spinner, now with a
+  `semanticsLabel` for parity with the labeled spinners already elsewhere
+  (splash screen, form submit buttons).
+- **Consistent snackbars/toasts everywhere in one place**: rather than
+  editing every individual `showSnackBar` call across Add/Edit/Delete
+  expense, auth, and settings, `AppTheme` now defines a single
+  `snackBarTheme` (floating behavior, rounded shape matching the app's
+  card/button corner radius, `colorScheme.inverseSurface` background) so
+  every success and error toast in the app already looks the same without
+  each call site needing to specify it.
+- **44x44 minimum touch targets on the history row actions**:
+  `ExpenseListItem`'s edit/delete `IconButton`s used
+  `VisualDensity.compact` to fit two icons in a tight row, which could push
+  their effective tap area below a comfortable minimum. They now use
+  explicit `constraints: BoxConstraints(minWidth: 44, minHeight: 44)`
+  instead, keeping the same compact visual icon size while guaranteeing the
+  tap target — verified directly in `ux_polish_test.dart` via
+  `tester.getSize`.
+- **A real error state for sign-in/registration failures**: the auth
+  screen's validation/auth error was plain colored text; it's now a boxed,
+  iconed banner (`colorScheme.errorContainer`, matching how errors read
+  elsewhere in the app — confirmation dialogs' destructive actions, the
+  dashboard/history's `StatusView`) that fades in with a short
+  `AnimatedSwitcher` rather than popping in abruptly.
+- **Subtle, deliberately minimal animation, not more of it**: three small
+  crossfades were added — the auth error banner appearing, the splash
+  screen's loading→failed transition, and the dashboard's monthly-trend
+  chart's loading→data transition — each a 150–200ms `AnimatedSwitcher`.
+  Nothing else in the app was given a new animation; the skeleton loader
+  above is intentionally static for the same reason.
+- **Overflow guards for large text scale and narrow phones**: the
+  dashboard's greeting (which can include a signed-in user's display name,
+  arbitrary length) and its month-selector heading now cap at 1–2 lines with
+  ellipsis instead of assuming they always fit — the existing 320-logical-
+  pixel-width, 2x-text-scale widget test already exercised this class of
+  layout, this closes a gap it hadn't hit yet.
+- **Everything else was already in good shape and deliberately left alone**:
+  every screen already had SafeArea, a loading spinner, an empty state with
+  a call to action, an error state with Retry, and a confirmation dialog for
+  every destructive action (delete, discard unsaved changes, logout) styled
+  consistently (Cancel/destructive-action pair, the destructive action in
+  `colorScheme.error`). Dark mode, spacing, and form keyboard behavior
+  (`textInputAction` chains, `autofillHints`, scrollable forms) were already
+  correct per the Charts and Settings modules' own audits, so this pass
+  didn't re-touch them beyond the snackbar theme above.
+- **Tests**: new `test/presentation/ux_polish_test.dart` covers
+  `ExpenseListSkeleton` (row count, light/dark mode), `ScrollableFill`
+  (fills short content to viewport height, remains pull-to-refresh-able),
+  and the history row action touch targets. No existing test's expectations
+  changed — the loading-state spinner assertions that exist elsewhere are
+  all for per-row delete progress or the Add/Edit save buttons, not the list
+  itself, so replacing the list's own loading spinner with the skeleton
+  didn't require updating them.

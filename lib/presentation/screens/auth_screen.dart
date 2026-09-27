@@ -143,18 +143,22 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                           ),
                         ),
                       ],
-                      if (action.hasError) ...[
-                        const SizedBox(height: AppSpacing.medium),
-                        Semantics(
-                          liveRegion: true,
-                          child: Text(
-                            authErrorMessage(action.error),
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.error,
-                            ),
-                          ),
-                        ),
-                      ],
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 150),
+                        child: action.hasError
+                            ? Padding(
+                                key: const ValueKey('auth-error'),
+                                padding: const EdgeInsets.only(
+                                  top: AppSpacing.medium,
+                                ),
+                                child: _AuthErrorBanner(
+                                  message: authErrorMessage(action.error),
+                                ),
+                              )
+                            : const SizedBox.shrink(
+                                key: ValueKey('auth-no-error'),
+                              ),
+                      ),
                       const SizedBox(height: AppSpacing.large),
                       FilledButton(
                         onPressed: action.isLoading ? null : _submit,
@@ -192,6 +196,49 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A boxed, iconed error banner rather than plain colored text, so a failed
+/// sign-in/registration reads as clearly as the confirmation dialogs and
+/// SnackBars elsewhere in the app.
+class _AuthErrorBanner extends StatelessWidget {
+  const _AuthErrorBanner({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Semantics(
+      liveRegion: true,
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.medium),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.errorContainer,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              Icons.error_outline,
+              color: theme.colorScheme.onErrorContainer,
+              size: 20,
+            ),
+            const SizedBox(width: AppSpacing.small),
+            Expanded(
+              child: Text(
+                message,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onErrorContainer,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
