@@ -4,6 +4,7 @@ import '../../core/errors/app_exception.dart';
 import '../../data/services/firebase_providers.dart';
 import '../../domain/entities/expense.dart';
 import '../../domain/entities/expense_category.dart';
+import '../../domain/usecases/expense_filter.dart';
 import '../../domain/usecases/expense_summary.dart';
 import '../../domain/usecases/month_navigation.dart';
 import 'auth_providers.dart';
@@ -225,3 +226,42 @@ final monthlyExpenseSummaryProvider =
         (list) => ExpenseSummaryCalculator.summarize(list, month: month),
       );
     });
+
+/// The expense history screen's active filter/sort state.
+final expenseFilterProvider =
+    NotifierProvider<ExpenseFilterController, ExpenseFilter>(
+      ExpenseFilterController.new,
+    );
+
+/// A thin wrapper around [ExpenseFilter]'s own immutable `copyWith*`
+/// methods — the state itself carries the mutual-exclusion rules (setting a
+/// date clears any range/month, and vice versa), so this controller only
+/// ever replaces `state` with what the model already computed.
+class ExpenseFilterController extends Notifier<ExpenseFilter> {
+  @override
+  ExpenseFilter build() => ExpenseFilter.initial;
+
+  void setCategory(ExpenseCategory? category) =>
+      state = state.copyWithCategory(category);
+
+  void setDate(DateTime? date) => state = state.copyWithDate(date);
+
+  void setDateRange(DateRange? range) => state = state.copyWithDateRange(range);
+
+  void setMonth(DateTime? month) => state = state.copyWithMonth(month);
+
+  void setSort(ExpenseSortOption sort) => state = state.copyWithSort(sort);
+
+  void clear() => state = ExpenseFilter.initial;
+}
+
+/// [expenseListProvider]'s data with [expenseFilterProvider] applied. Purely
+/// a re-map of data already held by the single live listener — filtering or
+/// re-sorting never issues another Firestore read.
+final filteredExpenseListProvider = Provider<AsyncValue<List<Expense>>>((ref) {
+  final filter = ref.watch(expenseFilterProvider);
+  final expenses = ref.watch(expenseListProvider);
+  return expenses.whenData(
+    (list) => ExpenseFilterEngine.apply(list, filter),
+  );
+});

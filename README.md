@@ -2,8 +2,8 @@
 
 Android-only Flutter application using the existing Firebase project.
 Authentication, the expense data layer, the full expense editor (add, edit,
-delete, history), and the main dashboard are implemented. Search/filtering
-is not implemented yet.
+delete, history), the main dashboard, and filtering/sorting of the history
+list are implemented. Free-text search is not implemented yet.
 
 ## Run
 
@@ -63,14 +63,17 @@ isolation, error mapping), expense form validation, the Add Expense screen, the
 Expense History screen (loaded/empty/error states, delete confirm/success/
 failure, edit navigation), the expense editor (existing data loading, field
 changes, validation, successful/failed update, missing expense, loading state,
-and the unsaved-changes guard), and the dashboard (month aggregation, month
-navigation, empty month, and that switching months never re-queries Firestore).
+and the unsaved-changes guard), the dashboard (month aggregation, month
+navigation, empty month, and that switching months never re-queries Firestore),
+and expense filtering/sorting (category, exact date, date range, month, all
+four sort orders, combined filters, clear filters, and an empty filtered
+result — at both the pure-model level and wired through the history screen).
 They do not verify a live Firebase connection. Launch on the configured Pixel
 emulator for that check.
 
 ## Next modules
 
-1. Search and category/date filtering over the same `expenseListProvider` stream.
+1. Free-text search over the same `expenseListProvider` stream.
 2. A real chart for the category breakdown (see "Dashboard module" below).
 
 The UI shell needs no Console changes. Using Auth and Firestore requires the
@@ -268,3 +271,53 @@ with a "View all" link to the full history at `/expenses`.
 
 `HomeScreen`'s FAB stays visible over the dashboard exactly as it did over
 the history list, so "Add expense" is reachable from Home either way.
+
+## Filtering & sorting module
+
+The expense history screen (`/expenses`) can now be narrowed by category,
+an exact date, a date range, or a month, and reordered by newest, oldest,
+highest amount, or lowest amount — any combination at once.
+
+- **Immutable state, pure logic**: `ExpenseFilter` (`domain/usecases/expense_filter.dart`)
+  holds the four optional constraints and the current `ExpenseSortOption`;
+  every change goes through a `copyWith*` method that returns a new instance
+  rather than mutating one in place. `ExpenseFilterEngine.apply` is a
+  standalone pure function — filter, then sort, on a plain `List<Expense>` —
+  with no dependency on widgets or providers, so `test/domain/expense_filter_test.dart`
+  exercises category filtering, exact-date filtering, date-range filtering
+  (its own small `DateRange` value type, an inclusive whole-day range),
+  month filtering, all four sort orders, several filters combined at once,
+  clearing back to `ExpenseFilter.initial`, and a combination matching
+  nothing, entirely without pumping a widget tree.
+- **Mutual exclusion lives in the model, not the UI**: setting an exact date
+  clears any active date range or month (and vice versa) inside
+  `ExpenseFilter`'s own `copyWith*` methods, since the three date modes are
+  alternatives, not independent constraints. Category and sort are
+  orthogonal to all three and to each other, so "category = Food, date
+  range = Sept 1–30, sort = highest amount" narrows and orders in one pass,
+  as required.
+- **No extra Firestore reads**: `filteredExpenseListProvider`
+  (`presentation/providers/expense_providers.dart`) is a plain synchronous
+  `Provider` that maps `expenseListProvider`'s already-loaded data through
+  `ExpenseFilterEngine.apply` and the current `expenseFilterProvider` state —
+  the same pattern as the dashboard's monthly summary. Changing a filter or
+  the sort order only re-filters data already in memory.
+- **`ExpenseHistoryView`** now tells apart "no expenses at all" (checked
+  against the raw, unfiltered `expenseListProvider`) from "no expenses match
+  the current filters" (checked against `filteredExpenseListProvider`), so
+  the empty state and its call to action differ: "No expenses yet" → Add
+  expense, versus "No expenses match your filters" → Clear filters. The
+  filter bar itself only appears once there's at least one expense to filter.
+- **`ExpenseFilterBar`** (`presentation/widgets/expense_filter_bar.dart`) is
+  presentation-only — every chip reads or writes `expenseFilterProvider`
+  through its controller, never `ExpenseFilterEngine` directly. The category
+  picker is a bottom sheet of `ChoiceChip`s reusing `CategorySelector`'s
+  icons; date and date-range use Flutter's built-in pickers; month reuses
+  the date picker in its year-view mode (there's no dedicated month-only
+  picker in Flutter) and keeps only the year/month of whatever gets
+  confirmed. A "Clear filters" chip appears only while a filter is active.
+- Covered again at the widget level in `test/presentation/expense_filter_bar_test.dart`
+  (picking a category narrows the list, an unmatched combination shows the
+  empty-filtered state and Clear filters recovers from it, and changing sort
+  reorders the rendered rows) — the same combined/clear/empty-result
+  behavior as the domain tests, this time proven through the actual UI.

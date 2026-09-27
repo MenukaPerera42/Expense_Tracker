@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/constants/app_spacing.dart';
 import '../../routing/app_router.dart';
 import '../providers/expense_providers.dart';
+import '../widgets/expense_filter_bar.dart';
 import '../widgets/expense_list_item.dart';
 import '../widgets/status_view.dart';
 
@@ -41,8 +42,15 @@ class ExpenseHistoryView extends ConsumerWidget {
       }
     });
 
-    final expenses = ref.watch(expenseListProvider);
-    return expenses.when(
+    // The raw (unfiltered) list decides whether there are any expenses at
+    // all; filteredExpenseListProvider re-maps the same data through the
+    // active ExpenseFilter, so switching filters never re-queries Firestore.
+    final hasAnyExpenses = ref.watch(
+      expenseListProvider.select((state) => state.valueOrNull?.isNotEmpty ?? false),
+    );
+    final filtered = ref.watch(filteredExpenseListProvider);
+
+    return filtered.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (error, _) => StatusView(
         icon: Icons.error_outline,
@@ -54,7 +62,7 @@ class ExpenseHistoryView extends ConsumerWidget {
         ),
       ),
       data: (expenses) {
-        if (expenses.isEmpty) {
+        if (!hasAnyExpenses) {
           return StatusView(
             icon: Icons.receipt_long_outlined,
             title: 'No expenses yet',
@@ -66,27 +74,56 @@ class ExpenseHistoryView extends ConsumerWidget {
             ),
           );
         }
-        return ListView.builder(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.medium,
-            AppSpacing.medium,
-            AppSpacing.medium,
-            // Extra bottom padding keeps the last card clear of the FAB.
-            AppSpacing.extraLarge * 2,
-          ),
-          itemCount: expenses.length,
-          itemBuilder: (context, index) {
-            final expense = expenses[index];
-            return Padding(
-              key: ValueKey(expense.id),
-              padding: const EdgeInsets.only(bottom: AppSpacing.small),
-              child: ExpenseListItem(
-                expense: expense,
-                onEdit: () =>
-                    context.push(AppRouter.editExpensePath(expense.id)),
+        return Column(
+          children: [
+            const Padding(
+              padding: EdgeInsets.fromLTRB(
+                AppSpacing.medium,
+                AppSpacing.medium,
+                AppSpacing.medium,
+                0,
               ),
-            );
-          },
+              child: ExpenseFilterBar(),
+            ),
+            Expanded(
+              child: expenses.isEmpty
+                  ? StatusView(
+                      icon: Icons.filter_alt_off_outlined,
+                      title: 'No expenses match your filters',
+                      message: 'Try a different category, date, or range.',
+                      action: FilledButton(
+                        onPressed: () =>
+                            ref.read(expenseFilterProvider.notifier).clear(),
+                        child: const Text('Clear filters'),
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.medium,
+                        AppSpacing.medium,
+                        AppSpacing.medium,
+                        // Extra bottom padding keeps the last card clear of the FAB.
+                        AppSpacing.extraLarge * 2,
+                      ),
+                      itemCount: expenses.length,
+                      itemBuilder: (context, index) {
+                        final expense = expenses[index];
+                        return Padding(
+                          key: ValueKey(expense.id),
+                          padding: const EdgeInsets.only(
+                            bottom: AppSpacing.small,
+                          ),
+                          child: ExpenseListItem(
+                            expense: expense,
+                            onEdit: () => context.push(
+                              AppRouter.editExpensePath(expense.id),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+            ),
+          ],
         );
       },
     );
