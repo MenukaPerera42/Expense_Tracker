@@ -4,6 +4,7 @@ import '../../core/errors/app_exception.dart';
 import '../../data/services/firebase_providers.dart';
 import '../../domain/entities/expense.dart';
 import '../../domain/entities/expense_category.dart';
+import '../../domain/usecases/expense_chart_data.dart';
 import '../../domain/usecases/expense_filter.dart';
 import '../../domain/usecases/expense_search.dart';
 import '../../domain/usecases/expense_summary.dart';
@@ -288,3 +289,16 @@ final filteredExpenseListProvider = Provider<AsyncValue<List<Expense>>>((ref) {
     return ExpenseSearchEngine.apply(filtered, query);
   });
 });
+
+/// The last six months' totals, ending at [selectedMonthProvider] — another
+/// pure re-map of [expenseListProvider]'s already-loaded data; browsing
+/// months, like everywhere else on the dashboard, never triggers another
+/// Firestore read.
+final monthlySpendingChartProvider =
+    Provider<AsyncValue<List<MonthlySpendingPoint>>>((ref) {
+      final month = ref.watch(selectedMonthProvider);
+      final expenses = ref.watch(expenseListProvider);
+      return expenses.whenData(
+        (list) => ExpenseChartData.monthlySpending(list, endMonth: month),
+      );
+    });

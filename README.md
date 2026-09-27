@@ -2,8 +2,8 @@
 
 Android-only Flutter application using the existing Firebase project.
 Authentication, the expense data layer, the full expense editor (add, edit,
-delete, history), the main dashboard, and filtering/sorting/search of the
-history list are implemented.
+delete, history), the main dashboard with charts, and filtering/sorting/
+search of the history list are implemented.
 
 ## Run
 
@@ -40,10 +40,10 @@ current session; persistence is deferred to the settings module. Currency is
 centralized in `CurrencyConfig`, defaulting to LKR / en_LK with two decimal places.
 
 Installed dependencies include Firebase Core/Auth/Firestore, Riverpod, go_router,
-intl, and mocktail for tests. Pub resolves stable compatible versions and `pubspec.lock`
-records the result. fl_chart, serialization code
-generation, and integration_test will be introduced with modules that use them.
-Simple immutable configuration does not need generated models.
+intl, fl_chart, and mocktail for tests. Pub resolves stable compatible versions
+and `pubspec.lock` records the result. Serialization code generation and
+integration_test will be introduced with modules that use them. Simple
+immutable configuration does not need generated models.
 
 ## Verification
 
@@ -70,9 +70,12 @@ sort orders, combined filters, clear filters, and an empty filtered result —
 at both the pure-model level and wired through the history screen), and
 expense search (title, note, case-insensitivity, whitespace tolerance, no
 result, combined with a category filter, combined with a date filter, clear
-search, and that the filtered list only updates once the debounce elapses).
-They do not verify a live Firebase connection. Launch on the configured Pixel
-emulator for that check.
+search, and that the filtered list only updates once the debounce elapses),
+and the dashboard's charts (category aggregation into chart-ready slices,
+zero data, one category, many categories, large amounts, the monthly-trend
+transformation, and that each chart renders without error in both light and
+dark mode). They do not verify a live Firebase connection. Launch on the
+configured Pixel emulator for that check.
 
 ## Next modules
 
@@ -370,3 +373,66 @@ result respects whatever filters/sort are already active.
   `ExpenseSearchField` only sets its own state from user input, it also
   listens for external clears of `expenseSearchQueryProvider` (e.g. from that
   shared button) so its own text box stays in sync.
+
+## Charts module
+
+The dashboard now visualizes spending with `fl_chart` instead of numbers
+alone: a donut chart of the selected month's category breakdown, and a bar
+chart of the last six months' totals.
+
+- **Pure transformation, no Firestore coupling**: `domain/usecases/expense_chart_data.dart`
+  turns already-computed data into chart-ready shapes — `CategorySlice`
+  (category, amount, percentage of the chart's total) from a category→total
+  map, and `MonthlySpendingPoint` (month, total) from a raw expense list by
+  re-running `ExpenseSummaryCalculator.summarize` per month. Both chart
+  widgets (`CategoryPieChart`, `MonthlySpendingChart`) take these plain data
+  types as constructor parameters — never a repository, a provider, or a raw
+  `Expense` list — so they have no path to Firestore at all and can be
+  previewed or reused against any data. `test/domain/expense_chart_data_test.dart`
+  covers category aggregation and totals (sorted, percentages summing to
+  1.0), the zero-data case (an empty map → an empty slice list), one
+  category (a single 100% slice), many categories (all nine represented),
+  large amounts (exact, no float rounding surprises), and the monthly
+  transformation for a selected month and window.
+- **No extra Firestore reads**: the category chart's slices are computed
+  inline in `DashboardView` from `summary.categoryTotals` (already resolved
+  by `monthlyExpenseSummaryProvider` — no separate provider needed for a
+  one-line pure-function call). `monthlySpendingChartProvider` is a plain
+  `Provider` re-mapping `expenseListProvider`'s already-loaded data, keyed
+  off `selectedMonthProvider` — browsing months recomputes the trend chart
+  from memory, the same pattern as every other dashboard figure.
+- **Not visually dominant**: both charts render at a fixed, modest height
+  (160px) regardless of screen width — `CategoryPieChart` also caps its own
+  diameter at 320px so it doesn't stretch edge-to-edge on a tablet — rather
+  than becoming the page's focal point. `CategorySummaryList` (the existing
+  proportional-bar list) stays directly under the pie chart and doubles as
+  its legend: it already prints exact figures and category names the pie
+  chart's slices don't have room for, and now shares its colors
+  (`colorForCategory` in `category_selector.dart`) with the chart, so a
+  slice and its legend row are visually tied together.
+- **Zero data**: each chart shows a short text message ("No spending yet" /
+  "No spending in this period yet") instead of an empty or broken chart.
+  **One category**: a single full slice with a "100%" label. **Many
+  categories**: small slices below an 8% share skip their in-chart
+  percentage label (it wouldn't fit legibly) but stay fully represented in
+  the legend. **Large amounts**: percentages and bar heights are computed
+  from the real totals with no artificial cap; the bar chart's `maxY` always
+  leaves headroom above the tallest bar. **Dark mode**: category colors are
+  a fixed, deliberately theme-independent palette (`shade400` tones chosen
+  to read clearly on both a light and a dark surface) rather than derived
+  from the seeded color scheme, while every other chart element (grid lines,
+  axis labels, the empty-state message, the tooltip) uses `Theme.of(context)`
+  colors, so it adapts automatically. **Responsive layouts**: both charts
+  size themselves from their parent's constraints (via `LayoutBuilder` /
+  `SizedBox`) rather than a hard-coded width, so they render correctly at
+  phone and tablet widths alike.
+- **Labels where useful, not everywhere**: the bar chart labels its x-axis
+  with abbreviated months and highlights the selected month's bar in the
+  primary color (others muted), with exact figures available on touch via a
+  tooltip rather than printed permanently on every bar — printing nine
+  currency labels on a 160px-tall chart would be the "visually dominant,
+  hard to read" outcome this module was asked to avoid.
+- Covered at the widget level in `test/presentation/dashboard_charts_test.dart`:
+  zero data, one category, many categories, a very large amount, and dark
+  mode for both charts, each asserting the widget renders without a
+  `takeException()` failure.

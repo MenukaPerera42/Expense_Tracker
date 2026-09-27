@@ -6,13 +6,16 @@ import 'package:intl/intl.dart';
 import '../../core/config/currency_config.dart';
 import '../../core/constants/app_spacing.dart';
 import '../../core/utils/greeting.dart';
+import '../../domain/usecases/expense_chart_data.dart';
 import '../../domain/usecases/expense_summary.dart';
 import '../../domain/usecases/month_navigation.dart';
 import '../../routing/app_router.dart';
 import '../providers/auth_providers.dart';
 import '../providers/expense_providers.dart';
+import '../widgets/category_pie_chart.dart';
 import '../widgets/category_summary_list.dart';
 import '../widgets/expense_list_item.dart';
+import '../widgets/monthly_spending_chart.dart';
 import '../widgets/status_view.dart';
 
 /// Home's body: current-month spending at a glance, with the ability to
@@ -84,10 +87,18 @@ class _DashboardContent extends ConsumerWidget {
         const SizedBox(height: AppSpacing.medium),
         _TotalSpendingCard(summary: summary),
         const SizedBox(height: AppSpacing.large),
+        Text('Last 6 months', style: theme.textTheme.titleMedium),
+        const SizedBox(height: AppSpacing.medium),
+        const _MonthlyTrendChart(),
+        const SizedBox(height: AppSpacing.large),
         if (summary.isEmpty)
           _EmptyMonth(month: summary.month)
         else ...[
           Text('Spending by category', style: theme.textTheme.titleMedium),
+          const SizedBox(height: AppSpacing.medium),
+          CategoryPieChart(
+            slices: ExpenseChartData.categorySlices(summary.categoryTotals),
+          ),
           const SizedBox(height: AppSpacing.medium),
           CategorySummaryList(
             categoryTotals: summary.categoryTotals,
@@ -117,6 +128,25 @@ class _DashboardContent extends ConsumerWidget {
             ),
         ],
       ],
+    );
+  }
+}
+
+/// Shown regardless of whether the *selected* month is empty — a trend
+/// chart's value is in the months around an empty one, not just in it.
+class _MonthlyTrendChart extends ConsumerWidget {
+  const _MonthlyTrendChart();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final pointsAsync = ref.watch(monthlySpendingChartProvider);
+    return pointsAsync.when(
+      loading: () => const SizedBox(
+        height: 96,
+        child: Center(child: CircularProgressIndicator()),
+      ),
+      error: (error, stackTrace) => const SizedBox.shrink(),
+      data: (points) => MonthlySpendingChart(points: points),
     );
   }
 }
