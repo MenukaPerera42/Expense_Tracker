@@ -7,6 +7,11 @@ abstract interface class ExpenseRepository {
   Future<Expense?> getExpenseById(String id);
   Stream<List<Expense>> watchExpenses({bool descending = true});
 
+  /// Allocates a new document identifier for [createExpense]. Generated
+  /// locally (no network round trip); callers build the [Expense] to create
+  /// using this ID before calling createExpense.
+  String newExpenseId();
+
   /// Caller supplies a stable ID. Existing IDs fail instead of overwriting.
   /// Audit timestamps in the input are ignored in favor of server timestamps.
   Future<void> createExpense(Expense expense);

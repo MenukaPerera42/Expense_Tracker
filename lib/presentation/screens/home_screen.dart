@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/constants/app_constants.dart';
 import '../providers/theme_mode_provider.dart';
 import '../providers/auth_providers.dart';
 import '../widgets/status_view.dart';
+import '../../routing/app_router.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -59,8 +61,13 @@ class HomeScreen extends ConsumerWidget {
           title: 'A clearer view of your spending',
           message:
               'Your expense workspace is taking shape. '
-              'Expense tracking is coming next.',
+              'Expense history is coming next.',
         ),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => context.push(AppRouter.addExpensePath),
+        icon: const Icon(Icons.add),
+        label: const Text('Add expense'),
       ),
     );
   }

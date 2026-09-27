@@ -97,6 +97,9 @@ class FirestoreExpenseRepository implements ExpenseRepository {
       });
 
   @override
+  String newExpenseId() => _collection(_uid()).doc().id;
+
+  @override
   Future<void> createExpense(Expense expense) =>
       _write(expense.id, (transaction, doc, existing, uid) {
         _requireOwner(expense, uid);

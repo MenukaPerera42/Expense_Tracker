@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../data/app_initialization.dart';
 import '../presentation/providers/auth_providers.dart';
+import '../presentation/screens/add_expense_screen.dart';
 import '../presentation/screens/auth_screen.dart';
 import '../presentation/screens/home_screen.dart';
 import '../presentation/screens/splash_screen.dart';
@@ -49,6 +50,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         name: AppRouter.homeName,
         builder: (_, _) => const _ProtectedHome(),
       ),
+      GoRoute(
+        path: AppRouter.addExpensePath,
+        name: AppRouter.addExpenseName,
+        builder: (_, _) => const AddExpenseScreen(),
+      ),
     ],
     errorBuilder: (context, state) => Scaffold(
       body: SafeArea(
@@ -74,6 +80,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 abstract final class AppRouter {
   static const homePath = '/';
   static const homeName = 'home';
+  static const addExpensePath = '/expenses/add';
+  static const addExpenseName = 'addExpense';
 }
 
 class _RouterRefresh extends ChangeNotifier {

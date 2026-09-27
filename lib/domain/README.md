@@ -30,4 +30,19 @@ must not precede createdAt. Date filtering/display must choose a user timezone.
 - Malformed payloads raise FormatException. Invalid direct construction raises
   ArgumentError. Unknown category codes never silently become Other.
 
+`ExpenseRepository.newExpenseId()` allocates a Firestore auto-generated document
+ID for a new expense. It exists so form controllers never need to reach into
+Firestore themselves just to get an ID; the Firestore implementation returns
+`collection.doc().id`, which is generated locally with no network round trip.
+
+## Expense form validation
+
+`usecases/expense_validation.dart` holds UI-facing policy — maximum lengths for
+title/note, a sanity ceiling on amount, and the "no future dates" product rule
+— as opposed to the entity's own structural invariants above. It is
+intentionally separate: the entity should stay valid for any reasonable
+programmatic use (e.g. a future backfill/import), while the form can impose
+stricter, product-specific limits. See `README.md`'s "Add Expense module"
+section for the reasoning behind each specific limit.
+
 No Firestore writes or security-rule changes are part of this model module.
