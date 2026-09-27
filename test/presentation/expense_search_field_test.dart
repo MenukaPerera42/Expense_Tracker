@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:expense_tracker/presentation/widgets/category_selector.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -158,7 +159,7 @@ void main() {
     await mount(tester);
     await tester.tap(find.widgetWithText(InputChip, 'Category'));
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(ChoiceChip, 'Food'));
+    await tester.tap(find.widgetWithText(CategoryPill, 'Food'));
     await tester.pumpAndSettle();
 
     await search(tester, 'lunch');

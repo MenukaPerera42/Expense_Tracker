@@ -73,7 +73,7 @@ class CategorySelector extends StatelessWidget {
           runSpacing: 10,
           children: [
             for (final category in ExpenseCategory.values)
-              _CategoryPill(
+              CategoryPill(
                 category: category,
                 isSelected: category == selected,
                 onTap: onChanged == null ? null : () => onChanged!(category),
@@ -94,8 +94,9 @@ class CategorySelector extends StatelessWidget {
   }
 }
 
-class _CategoryPill extends StatelessWidget {
-  const _CategoryPill({
+class CategoryPill extends StatelessWidget {
+  const CategoryPill({
+    super.key,
     required this.category,
     required this.isSelected,
     required this.onTap,
@@ -139,7 +140,7 @@ class _CategoryPill extends StatelessWidget {
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: activeColor.withOpacity(0.4),
+                    color: activeColor.withValues(alpha: 0.4),
                     blurRadius: 8,
                     offset: const Offset(0, 3),
                   ),

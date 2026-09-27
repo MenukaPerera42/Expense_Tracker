@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:expense_tracker/presentation/widgets/category_selector.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -324,7 +325,7 @@ void main() {
 
         // Select 'Transport' (which has 0 expenses)
         final transportOption = find.descendant(
-          of: find.byType(ChoiceChip),
+          of: find.byType(CategoryPill),
           matching: find.text('Transport'),
         );
         await tester.tap(transportOption);

@@ -5,6 +5,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:expense_tracker/app.dart';
+import 'package:expense_tracker/presentation/widgets/category_selector.dart';
 import 'package:expense_tracker/data/app_initialization.dart';
 import 'package:expense_tracker/data/services/firebase_providers.dart';
 import 'package:expense_tracker/domain/entities/auth_user.dart';
@@ -88,7 +89,7 @@ void main() {
 
     await tester.tap(find.widgetWithText(InputChip, 'Category'));
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(ChoiceChip, 'Transport'));
+    await tester.tap(find.widgetWithText(CategoryPill, 'Transport'));
     await tester.pumpAndSettle();
 
     expect(find.text('Bus'), findsOneWidget);
@@ -114,7 +115,7 @@ void main() {
 
       await tester.tap(find.widgetWithText(InputChip, 'Category'));
       await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(ChoiceChip, 'Transport'));
+      await tester.tap(find.widgetWithText(CategoryPill, 'Transport'));
       await tester.pumpAndSettle();
 
       expect(find.text('No matching expenses'), findsOneWidget);

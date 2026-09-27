@@ -69,7 +69,29 @@ class _SortButton extends StatelessWidget {
       onSelected: onChanged,
       itemBuilder: (context) => [
         for (final option in ExpenseSortOption.values)
-          PopupMenuItem(value: option, child: Text(option.label)),
+          PopupMenuItem(
+            value: option,
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: option == sort ? const Color(0xFF0D47A1) : null,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Text(
+                option.label,
+                style: TextStyle(
+                  color: option == sort
+                      ? Colors.white
+                      : Theme.of(context).colorScheme.onSurface,
+                  fontSize: 13,
+                  fontWeight: option == sort
+                      ? FontWeight.w700
+                      : FontWeight.w500,
+                ),
+              ),
+            ),
+          ),
       ],
       child: Chip(
         avatar: const Icon(Icons.sort, size: 18),
@@ -87,7 +109,7 @@ class _CategoryChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InputChip(
+    return _HistoryFilterChip(
       avatar: selected == null
           ? const Icon(Icons.category_outlined, size: 18)
           : Icon(iconForCategory(selected!), size: 18),
@@ -109,6 +131,7 @@ class _CategoryChip extends StatelessWidget {
           onSelected(result);
         }
       },
+      clearLabel: 'Clear category filter',
       onDeleted: selected == null ? null : () => onSelected(null),
     );
   }
@@ -124,7 +147,7 @@ class _CategoryPickerSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(AppSpacing.medium),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -136,15 +159,14 @@ class _CategoryPickerSheet extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.medium),
             Wrap(
-              spacing: AppSpacing.small,
-              runSpacing: AppSpacing.small,
+              spacing: 10,
+              runSpacing: 10,
               children: [
                 for (final category in ExpenseCategory.values)
-                  ChoiceChip(
-                    avatar: Icon(iconForCategory(category), size: 18),
-                    label: Text(category.displayName),
-                    selected: category == selected,
-                    onSelected: (_) => Navigator.of(context).pop(category),
+                  CategoryPill(
+                    category: category,
+                    isSelected: category == selected,
+                    onTap: () => Navigator.of(context).pop(category),
                   ),
               ],
             ),
@@ -170,7 +192,7 @@ class _DateChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InputChip(
+    return _HistoryFilterChip(
       avatar: const Icon(Icons.event_outlined, size: 18),
       label: Text(
         selectedDate == null
@@ -188,6 +210,7 @@ class _DateChip extends StatelessWidget {
         );
         if (picked != null) onPick(picked);
       },
+      clearLabel: 'Clear date filter',
       onDeleted: selectedDate == null ? null : () => onPick(null),
     );
   }
@@ -201,7 +224,7 @@ class _DateRangeChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InputChip(
+    return _HistoryFilterChip(
       avatar: const Icon(Icons.date_range_outlined, size: 18),
       label: Text(
         selectedRange == null
@@ -227,6 +250,7 @@ class _DateRangeChip extends StatelessWidget {
           onPick(DateRange(start: picked.start, end: picked.end));
         }
       },
+      clearLabel: 'Clear date range filter',
       onDeleted: selectedRange == null ? null : () => onPick(null),
     );
   }
@@ -240,7 +264,7 @@ class _MonthChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InputChip(
+    return _HistoryFilterChip(
       avatar: const Icon(Icons.calendar_view_month_outlined, size: 18),
       label: Text(
         selectedMonth == null
@@ -262,7 +286,66 @@ class _MonthChip extends StatelessWidget {
         );
         if (picked != null) onPick(picked);
       },
+      clearLabel: 'Clear month filter',
       onDeleted: selectedMonth == null ? null : () => onPick(null),
+    );
+  }
+}
+
+/// Mirrors the Add Expense category pill palette while retaining chip clearing
+/// and built-in keyboard/selection semantics for applied history filters.
+class _HistoryFilterChip extends StatelessWidget {
+  const _HistoryFilterChip({
+    required this.avatar,
+    required this.label,
+    required this.selected,
+    required this.onPressed,
+    this.onDeleted,
+    required this.clearLabel,
+  });
+  final Widget avatar;
+  final Widget label;
+  final bool selected;
+  final VoidCallback onPressed;
+  final VoidCallback? onDeleted;
+  final String clearLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    const active = Color(0xFF0D47A1);
+    final foreground = selected
+        ? Colors.white
+        : dark
+        ? const Color(0xFF94A3B8)
+        : const Color(0xFF64748B);
+    return InputChip(
+      avatar: avatar,
+      label: label,
+      selected: selected,
+      showCheckmark: false,
+      selectedColor: active,
+      backgroundColor: dark ? const Color(0xFF1E293B) : Colors.white,
+      side: BorderSide(
+        width: 1.5,
+        color: selected
+            ? active
+            : dark
+            ? const Color(0xFF334155)
+            : const Color(0xFFCBD5E1),
+      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      labelStyle: TextStyle(
+        fontSize: 13,
+        color: foreground,
+        fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+      ),
+      iconTheme: IconThemeData(color: foreground, size: 18),
+      deleteIconColor: foreground,
+      deleteButtonTooltipMessage: clearLabel,
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+      onPressed: onPressed,
+      onDeleted: onDeleted,
     );
   }
 }
