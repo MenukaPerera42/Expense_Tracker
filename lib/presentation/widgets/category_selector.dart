@@ -69,17 +69,14 @@ class CategorySelector extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.small),
         Wrap(
-          spacing: AppSpacing.small,
-          runSpacing: AppSpacing.small,
+          spacing: 10,
+          runSpacing: 10,
           children: [
             for (final category in ExpenseCategory.values)
-              ChoiceChip(
-                avatar: Icon(iconForCategory(category), size: 18),
-                label: Text(category.displayName),
-                selected: category == selected,
-                onSelected: onChanged == null
-                    ? null
-                    : (_) => onChanged!(category),
+              _CategoryPill(
+                category: category,
+                isSelected: category == selected,
+                onTap: onChanged == null ? null : () => onChanged!(category),
               ),
           ],
         ),
@@ -93,6 +90,87 @@ class CategorySelector extends StatelessWidget {
           ),
         ],
       ],
+    );
+  }
+}
+
+class _CategoryPill extends StatelessWidget {
+  const _CategoryPill({
+    required this.category,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  final ExpenseCategory category;
+  final bool isSelected;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final catColor = colorForCategory(category);
+
+    // Unselected colors matching the new Apple-style inputs
+    final unselectedBg = isDark ? const Color(0xFF1E293B) : Colors.white;
+    final unselectedBorder = isDark
+        ? const Color(0xFF334155)
+        : const Color(0xFFCBD5E1);
+    final unselectedText = isDark
+        ? const Color(0xFF94A3B8)
+        : const Color(0xFF64748B);
+
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOutCubic,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected ? catColor : unselectedBg,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected ? catColor : unselectedBorder,
+            width: 1.5,
+          ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: catColor.withOpacity(0.4),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ]
+              : null,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              transitionBuilder: (child, animation) =>
+                  ScaleTransition(scale: animation, child: child),
+              child: Icon(
+                // Use rounded icons if available, otherwise regular
+                iconForCategory(category),
+                key: ValueKey(isSelected),
+                size: 18,
+                color: isSelected ? Colors.white : unselectedText,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              category.displayName,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                color: isSelected ? Colors.white : unselectedText,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
