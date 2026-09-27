@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:expense_tracker/app.dart';
 import 'package:expense_tracker/core/errors/app_exception.dart';
 import 'package:expense_tracker/data/services/firebase_providers.dart';
@@ -140,6 +141,7 @@ void main() {
     WidgetTester tester,
     MockRepository repo,
   ) async {
+    SharedPreferences.setMockInitialValues({});
     final container = ProviderContainer(
       overrides: [
         appInitializerProvider.overrideWithValue(() async {}),

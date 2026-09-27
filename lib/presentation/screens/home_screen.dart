@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/constants/app_constants.dart';
-import '../providers/theme_mode_provider.dart';
 import '../providers/auth_providers.dart';
 import '../../routing/app_router.dart';
 import 'dashboard_view.dart';
@@ -13,7 +12,6 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final mode = ref.watch(themeModeProvider);
     final action = ref.watch(authActionProvider);
     ref.listen(authActionProvider, (previous, next) {
       if (next.hasError) {
@@ -39,19 +37,10 @@ class HomeScreen extends ConsumerWidget {
                   )
                 : const Icon(Icons.logout),
           ),
-          PopupMenuButton<ThemeMode>(
-            tooltip: 'Appearance',
-            icon: const Icon(Icons.brightness_6_outlined),
-            initialValue: mode,
-            onSelected: ref.read(themeModeProvider.notifier).setMode,
-            itemBuilder: (context) => const [
-              PopupMenuItem(
-                value: ThemeMode.system,
-                child: Text('System theme'),
-              ),
-              PopupMenuItem(value: ThemeMode.light, child: Text('Light theme')),
-              PopupMenuItem(value: ThemeMode.dark, child: Text('Dark theme')),
-            ],
+          IconButton(
+            tooltip: 'Settings',
+            onPressed: () => context.push(AppRouter.settingsPath),
+            icon: const Icon(Icons.settings_outlined),
           ),
         ],
       ),

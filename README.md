@@ -2,8 +2,9 @@
 
 Android-only Flutter application using the existing Firebase project.
 Authentication, the expense data layer, the full expense editor (add, edit,
-delete, history), the main dashboard with charts, and filtering/sorting/
-search of the history list are implemented.
+delete, history), the main dashboard with charts, filtering/sorting/
+search of the history list, and a Settings screen (theme, currency
+preference, logout, app info) are implemented.
 
 ## Run
 
@@ -35,15 +36,17 @@ retry action. Tests inject an initializer without contacting live Firebase.
 Riverpod owns the router lifecycle and app state. Presentation contains no
 Firebase SDK imports or direct database calls.
 
-Material 3 follows the device theme by default. Appearance can be changed for the
-current session; persistence is deferred to the settings module. Currency is
-centralized in `CurrencyConfig`, defaulting to LKR / en_LK with two decimal places.
+Material 3 follows the device theme by default and the choice (system/light/dark)
+is persisted locally via the Settings screen — see "Settings module" below.
+Currency is centralized in `CurrencyConfig`, defaulting to LKR / en_LK with two
+decimal places; Settings exposes a persisted currency preference, scoped as
+described in that section.
 
 Installed dependencies include Firebase Core/Auth/Firestore, Riverpod, go_router,
-intl, fl_chart, and mocktail for tests. Pub resolves stable compatible versions
-and `pubspec.lock` records the result. Serialization code generation and
-integration_test will be introduced with modules that use them. Simple
-immutable configuration does not need generated models.
+intl, fl_chart, shared_preferences, and mocktail for tests. Pub resolves stable
+compatible versions and `pubspec.lock` records the result. Serialization code
+generation and integration_test will be introduced with modules that use them.
+Simple immutable configuration does not need generated models.
 
 ## Verification
 
@@ -74,12 +77,18 @@ search, and that the filtered list only updates once the debounce elapses),
 and the dashboard's charts (category aggregation into chart-ready slices,
 zero data, one category, many categories, large amounts, the monthly-trend
 transformation, and that each chart renders without error in both light and
-dark mode). They do not verify a live Firebase connection. Launch on the
-configured Pixel emulator for that check.
+dark mode), and Settings (theme mode state, restoring a persisted theme mode,
+setting a theme mode persisting it, switching between all three modes,
+currency preference state/persistence, the Settings screen's appearance
+control, currency picker, logout confirm/cancel flow, and app info display).
+They do not verify a live Firebase connection. Launch on the configured Pixel
+emulator for that check.
 
 ## Next modules
 
-1. A real chart for the category breakdown (see "Dashboard module" below).
+Wiring the persisted currency preference into amount formatting throughout
+the app (dashboard, history, charts currently still use
+`CurrencyConfig.defaultCurrency` — see "Settings module" below).
 
 The UI shell needs no Console changes. Using Auth and Firestore requires the
 setup and rules described in docs/firebase-setup.md.
@@ -436,3 +445,100 @@ chart of the last six months' totals.
   zero data, one category, many categories, a very large amount, and dark
   mode for both charts, each asserting the widget renders without a
   `takeException()` failure.
+
+## Settings module
+
+A new `SettingsScreen` (`presentation/screens/settings_screen.dart`, at
+`/settings`) replaces Home's old "Appearance" popup menu with a proper
+Settings screen covering appearance, currency, account, and app information.
+Home's AppBar now has a "Settings" icon button alongside the existing "Sign
+out" button, which is unchanged — Settings additionally offers its own,
+confirmed "Log out", so both remain valid ways to sign out.
+
+- **Local persistence choice**: `shared_preferences` is used for both
+  persisted preferences here. The data being stored is two small, primitive
+  values (a `ThemeMode` name and a currency code string) with no querying,
+  relations, or need to sync across devices — exactly the shape
+  `shared_preferences`'s key-value store is for, and it is lighter weight
+  than pulling in a database (e.g. `sqflite`, Hive) for this. A single
+  `sharedPreferencesProvider` (`data/services/local_preferences_providers.dart`,
+  a `FutureProvider<SharedPreferences>`) is shared by both controllers so
+  there's exactly one call to `SharedPreferences.getInstance()`.
+- **Theme mode, persisted**: `ThemeModeController` (rewritten in
+  `presentation/providers/theme_mode_provider.dart`) still returns
+  `ThemeMode.system` synchronously from `build()` — so the app always has a
+  theme to render on the very first frame — but now also kicks off an async
+  `_restore()` that reads the `theme_mode` key from `sharedPreferencesProvider`
+  and updates `state` once it resolves. This is a deliberate, disclosed
+  trade-off: on a device with a previously-saved Dark preference, there can be
+  a single frame of the system theme before the restore completes and flips
+  it — acceptable given how fast `SharedPreferences` resolves in practice, and
+  far simpler than blocking the whole app shell on preference restoration the
+  way Firebase startup is blocked. `setMode` is now `async`: it updates
+  `state` immediately (so the UI responds instantly) and then persists
+  `mode.name` to `shared_preferences`.
+- **Currency preference, persisted but intentionally not wired everywhere
+  yet**: `CurrencyPreferenceController`
+  (`presentation/providers/currency_preference_provider.dart`) follows the
+  same restore-then-persist pattern, storing just the chosen `CurrencyConfig`'s
+  `code` and matching it back against a new `CurrencyConfig.options` list
+  (LKR, USD, EUR, GBP, INR) on restore. This is a real, working, persisted
+  preference — not a cosmetic placeholder — but the prompt asked for a
+  "currency preference placeholder/configuration," and the rest of the app
+  (dashboard totals, history rows, chart tooltips) still formats amounts with
+  `CurrencyConfig.defaultCurrency`. Rather than silently limiting the scope,
+  that's called out explicitly here and in "Next modules" above: picking a
+  currency in Settings persists correctly and is fully tested, but does not
+  yet change how amounts are displayed elsewhere.
+- **Settings screen contents**: Appearance (a `SegmentedButton<ThemeMode>`
+  with System/Light/Dark segments, each with an icon, mirroring the
+  three-mode requirement directly rather than through a menu); Currency (a
+  `ListTile` showing the current code that opens a bottom sheet of
+  `RadioListTile<CurrencyConfig>` options); Account ("Log out", styled in
+  `colorScheme.error`, behind a confirmation `AlertDialog` — mirroring the
+  existing discard-changes dialog's confirm/cancel shape — before calling
+  `AuthController.logout()`); About (`AppConstants.appName` and the new
+  `AppConstants.appVersion`).
+- **Every screen supports both themes — audit findings**: a full grep across
+  `lib/` for `Colors.` and `Color(0x` turned up exactly three hardcoded colors
+  in the whole app, all pre-existing and each a deliberate, narrow exception
+  rather than an oversight: `AppTheme._seedColor`, the single seed color
+  `ColorScheme.fromSeed` derives both the light and dark schemes from
+  (`core/theme/app_theme.dart`); the fixed categorical palette in
+  `category_selector.dart`'s `colorForCategory`, needed because one seed color
+  cannot generate nine visually distinct category hues, chosen in `shade400`
+  tones deliberately so they stay legible on both a light and dark surface
+  (documented already in the Charts module above); and the pie chart's
+  in-slice label text color (`Colors.white` in `category_pie_chart.dart`),
+  needed because slice labels sit on top of the categorical colors above,
+  not the theme surface, so they can't be a `ColorScheme` color either.
+  Every other audited surface — cards (`CardThemeData`), input fields
+  (`InputDecorationThemeData`, including focus/error borders), dialogs
+  (Material 3's `AlertDialog` already derives from `ColorScheme` with no
+  extra theming needed), icons and buttons (`FilledButton`/`ElevatedButton`/
+  `OutlinedButton`/`TextButton` themes, plus the un-styled `IconButton`s and
+  `Icon`s throughout, which inherit `IconThemeData`/`colorScheme.onSurface`
+  by default), navigation (the `AppBar`, `BottomSheet`, and `SegmentedButton`
+  above all derive from `ThemeData`), and chart chrome (grid lines, axis
+  labels, tooltip background, the empty-state text — everything in
+  `CategoryPieChart`/`MonthlySpendingChart` except the categorical palette
+  itself) — already read from `Theme.of(context)`/`ColorScheme` rather than a
+  literal color, so no changes were needed there for this module; the audit
+  confirmed the existing `AppTheme` from earlier modules already holds this
+  invariant rather than needing new theming work now.
+- **Tests**: `test/presentation/theme_mode_provider_test.dart` covers theme
+  state (defaults to system before restore), persistence (restoring a
+  previously-saved dark mode; `setMode` writing the chosen mode to storage),
+  and switching between all three modes — plus the equivalent three cases for
+  the currency preference controller. `test/presentation/settings_screen_test.dart`
+  covers the screen itself: the appearance control reflecting and updating
+  `themeModeProvider`, a switch being written to local storage, restoring a
+  previously-persisted dark theme on mount, picking a currency updating both
+  the shown code and storage, confirming the logout dialog calling
+  `AuthRepository.logout()`, cancelling it not doing so, and the app
+  name/version being shown. `test/widget_test.dart`'s theme-switching test
+  now navigates to Settings and drives the `SegmentedButton` instead of the
+  old popup menu. Every existing test that mounts the full `ExpenseTrackerApp`
+  now calls `SharedPreferences.setMockInitialValues({})` before pumping,
+  since both new controllers now depend on `shared_preferences` during
+  startup.

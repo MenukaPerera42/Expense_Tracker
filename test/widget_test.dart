@@ -13,6 +13,7 @@ import 'package:expense_tracker/routing/app_router.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Trivial stand-in so Home's expense history stream has something to watch
 /// without contacting Firebase; this file is not about expense behavior.
@@ -39,6 +40,7 @@ void main() {
     WidgetTester tester, {
     Future<void> Function()? initialize,
   }) async {
+    SharedPreferences.setMockInitialValues({});
     final container = ProviderContainer(
       retry: (retryCount, error) => null,
       overrides: [
@@ -93,16 +95,16 @@ void main() {
     expect(find.text('Expense Tracker'), findsOneWidget);
   });
 
-  testWidgets('appearance menu switches the rendered theme', (tester) async {
+  testWidgets('settings screen switches the rendered theme', (tester) async {
     final container = await mount(tester);
     await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Appearance'));
+    await tester.tap(find.byTooltip('Settings'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Dark theme'));
+    await tester.tap(find.text('Dark'));
     await tester.pumpAndSettle();
     expect(container.read(themeModeProvider), ThemeMode.dark);
     expect(
-      Theme.of(tester.element(find.byType(Scaffold))).brightness,
+      Theme.of(tester.element(find.byType(Scaffold).first)).brightness,
       Brightness.dark,
     );
   });
