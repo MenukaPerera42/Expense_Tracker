@@ -51,9 +51,11 @@ void main() {
       overrides: [
         authRepositoryProvider.overrideWith((ref) async => repository),
         authStateProvider.overrideWith(
-          (ref) => users ?? Stream.value(
-            const AuthUser(id: 'u', name: 'Alex', email: 'alex@gmail.com'),
-          ),
+          (ref) =>
+              users ??
+              Stream.value(
+                const AuthUser(id: 'u', name: 'Alex', email: 'alex@gmail.com'),
+              ),
         ),
       ],
     );
@@ -118,6 +120,64 @@ void main() {
     },
   );
 
+  testWidgets(
+    'profile events update the displayed name without reopening Settings',
+    (tester) async {
+      final users = StreamController<AuthUser?>();
+      addTearDown(users.close);
+      users.add(const AuthUser(id: 'u', name: 'Alex', email: 'alex@gmail.com'));
+      await mount(tester, users: users.stream);
+      when(() => repository.updateName('Updated')).thenAnswer((_) async {
+        users.add(
+          const AuthUser(id: 'u', name: 'Updated', email: 'alex@gmail.com'),
+        );
+      });
+      await open(tester, 'Profile name');
+      await fill(tester, 'Profile name', 'Updated');
+      await submit(tester);
+      expect(find.text('Updated'), findsOneWidget);
+    },
+  );
+
+  testWidgets('closing the editor discards unsaved changes', (tester) async {
+    await mount(tester);
+    await open(tester, 'Profile name');
+    await fill(tester, 'Profile name', 'Not saved');
+    await tester.tap(find.byTooltip('Close'));
+    await tester.pumpAndSettle();
+    verifyNever(() => repository.updateName(any()));
+    expect(find.byType(TextFormField), findsNothing);
+  });
+
+  testWidgets('saving disables fields and closing until the write completes', (
+    tester,
+  ) async {
+    final gate = Completer<void>();
+    when(() => repository.updateName(any())).thenAnswer((_) => gate.future);
+    await mount(tester);
+    await open(tester, 'Profile name');
+    await fill(tester, 'Profile name', 'Saved');
+    await tester.tap(find.widgetWithText(FilledButton, 'Save changes'));
+    await tester.pump();
+    expect(
+      tester
+          .widget<IconButton>(
+            find.byWidgetPredicate(
+              (widget) => widget is IconButton && widget.tooltip == 'Close',
+            ),
+          )
+          .onPressed,
+      isNull,
+    );
+    expect(
+      tester.widget<TextFormField>(find.byType(TextFormField)).enabled,
+      isFalse,
+    );
+    gate.complete();
+    await tester.pumpAndSettle();
+    expect(find.text('Profile name updated.'), findsOneWidget);
+  });
+
   testWidgets('invalid name prevents saving', (tester) async {
     await mount(tester);
     await open(tester, 'Profile name');
@@ -127,39 +187,21 @@ void main() {
     verifyNever(() => repository.updateName(any()));
   });
 
-  testWidgets(
-    'email validates then shows pending verification, not immediate success',
-    (tester) async {
-      await mount(tester);
-      await open(tester, 'Email address');
-      await fill(tester, 'New email address', 'bad-email');
-      await submit(tester, 'Send verification email');
-      expect(find.text('Enter a valid email address.'), findsOneWidget);
-      verifyNever(
-        () => repository.changeEmail(
-          email: any(named: 'email'),
-          currentPassword: any(named: 'currentPassword'),
-        ),
-      );
-      await fill(tester, 'New email address', ' new@gmail.com ');
-      await fill(tester, 'Current password', ' current secret ');
-      await submit(tester, 'Send verification email');
-      verify(
-        () => repository.changeEmail(
-          email: 'new@gmail.com',
-          currentPassword: ' current secret ',
-        ),
-      ).called(1);
-      expect(
-        find.textContaining('Verification email sent to new@gmail.com'),
-        findsOneWidget,
-      );
-      expect(find.byType(TextFormField), findsNothing);
-      await tester.tap(find.text('Done'));
-      await tester.pumpAndSettle();
-      expect(find.text('alex@gmail.com'), findsOneWidget);
-    },
-  );
+  testWidgets('email is displayed without an edit action', (tester) async {
+    await mount(tester);
+    final email = find.widgetWithText(ListTile, 'Email address');
+    await tester.scrollUntilVisible(
+      email,
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+    final tile = tester.widget<ListTile>(email);
+    expect(tile.onTap, isNull);
+    expect(tile.trailing, isNull);
+    expect(find.text('alex@gmail.com'), findsOneWidget);
+    expect(find.text('Change email address'), findsNothing);
+  });
 
   testWidgets(
     'password confirmation prevents mismatches and password can be revealed',
@@ -236,7 +278,15 @@ void main() {
       find.widgetWithText(FilledButton, 'Save changes'),
     );
     await tester.pumpAndSettle();
-    await tester.drag(find.ancestor(of: find.widgetWithText(FilledButton, 'Save changes'), matching: find.byType(SingleChildScrollView)).first, const Offset(0, -500));
+    await tester.drag(
+      find
+          .ancestor(
+            of: find.widgetWithText(FilledButton, 'Save changes'),
+            matching: find.byType(SingleChildScrollView),
+          )
+          .first,
+      const Offset(0, -500),
+    );
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
     expect(
@@ -245,7 +295,7 @@ void main() {
     );
   });
 
-  testWidgets('refresh profile reloads verified email', (tester) async {
+  testWidgets('refresh profile reloads account data', (tester) async {
     await mount(tester);
     final refresh = find.text('Refresh profile');
     await tester.scrollUntilVisible(

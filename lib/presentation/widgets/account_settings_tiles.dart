@@ -6,7 +6,7 @@ import '../../domain/usecases/auth_validation.dart';
 import '../providers/account_settings_provider.dart';
 import '../providers/auth_providers.dart';
 
-enum AccountSetting { name, email, password }
+enum AccountSetting { name, password }
 
 class AccountSettingsTiles extends ConsumerWidget {
   const AccountSettingsTiles({super.key});
@@ -34,10 +34,6 @@ class AccountSettingsTiles extends ConsumerWidget {
           leading: const Icon(Icons.mail_outline),
           title: const Text('Email address'),
           subtitle: Text(user?.email ?? 'Your sign-in email'),
-          trailing: const Icon(Icons.chevron_right),
-          onTap: enabled
-              ? () => _edit(context, ref, user, AccountSetting.email)
-              : null,
         ),
         ListTile(
           leading: const Icon(Icons.lock_outline),
@@ -119,22 +115,16 @@ class _AccountEditorState extends ConsumerState<_AccountEditor> {
   final _currentPassword = TextEditingController();
   final _newPassword = TextEditingController();
   final _confirmation = TextEditingController();
-  bool _emailSent = false;
 
   String get _title => switch (widget.setting) {
     AccountSetting.name => 'Edit profile name',
-    AccountSetting.email => 'Change email address',
     AccountSetting.password => 'Change password',
   };
 
   @override
   void initState() {
     super.initState();
-    _value = TextEditingController(
-      text: widget.setting == AccountSetting.name
-          ? widget.user.name
-          : widget.user.email,
-    );
+    _value = TextEditingController(text: widget.user.name);
   }
 
   @override
@@ -155,10 +145,6 @@ class _AccountEditorState extends ConsumerState<_AccountEditor> {
     final controller = ref.read(accountSettingsProvider.notifier);
     final success = await switch (widget.setting) {
       AccountSetting.name => controller.updateName(_value.text),
-      AccountSetting.email => controller.changeEmail(
-        _value.text,
-        _currentPassword.text,
-      ),
       AccountSetting.password => controller.changePassword(
         _currentPassword.text,
         _newPassword.text,
@@ -168,15 +154,11 @@ class _AccountEditorState extends ConsumerState<_AccountEditor> {
     _currentPassword.clear();
     _newPassword.clear();
     _confirmation.clear();
-    if (widget.setting == AccountSetting.email) {
-      setState(() => _emailSent = true);
-    } else {
-      Navigator.of(context).pop(
-        widget.setting == AccountSetting.name
-            ? 'Profile name updated.'
-            : 'Password updated.',
-      );
-    }
+    Navigator.of(context).pop(
+      widget.setting == AccountSetting.name
+          ? 'Profile name updated.'
+          : 'Password updated.',
+    );
   }
 
   @override
@@ -225,127 +207,79 @@ class _AccountEditorState extends ConsumerState<_AccountEditor> {
                         ],
                       ),
                       const SizedBox(height: 16),
-                      if (_emailSent) ...[
-                        const Icon(Icons.mark_email_read_outlined, size: 40),
+                      if (widget.setting == AccountSetting.name)
+                        TextFormField(
+                          controller: _value,
+                          enabled: !saving,
+                          decoration: const InputDecoration(
+                            labelText: 'Profile name',
+                          ),
+                          textCapitalization: TextCapitalization.words,
+                          autofillHints: const [AutofillHints.name],
+                          maxLength: 100,
+                          validator: AuthValidation.name,
+                          textInputAction: TextInputAction.done,
+                          onFieldSubmitted: (_) => _submit(),
+                        ),
+                      if (widget.setting != AccountSetting.name) ...[
+                        _PasswordField(
+                          controller: _currentPassword,
+                          label: 'Current password',
+                          enabled: !saving,
+                          validator: (value) => value == null || value.isEmpty
+                              ? 'Enter your current password.'
+                              : null,
+                        ),
                         const SizedBox(height: 16),
+                      ],
+                      if (widget.setting == AccountSetting.password) ...[
+                        _PasswordField(
+                          controller: _newPassword,
+                          label: 'New password',
+                          enabled: !saving,
+                          newPassword: true,
+                          validator: (value) =>
+                              AuthValidation.password(value) ??
+                              (value == _currentPassword.text
+                                  ? 'Choose a different password.'
+                                  : null),
+                        ),
+                        const SizedBox(height: 16),
+                        _PasswordField(
+                          controller: _confirmation,
+                          label: 'Confirm new password',
+                          enabled: !saving,
+                          newPassword: true,
+                          validator: (value) => AuthValidation.confirmPassword(
+                            value,
+                            _newPassword.text,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+                      if (state.hasError) ...[
                         Semantics(
                           liveRegion: true,
                           child: Text(
-                            'Verification email sent to ${_value.text.trim()}. Open the link in that inbox to confirm the change. Your current email stays active until you verify it.',
+                            authErrorMessage(state.error),
+                            style: TextStyle(color: theme.colorScheme.error),
                           ),
                         ),
-                        const SizedBox(height: 12),
-                        const Text(
-                          'After verifying, tap Refresh profile in Settings. If your session has expired, sign in with your new email.',
-                        ),
-                        const SizedBox(height: 24),
-                        FilledButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          child: const Text('Done'),
-                        ),
-                      ] else ...[
-                        if (widget.setting == AccountSetting.name)
-                          TextFormField(
-                            controller: _value,
-                            enabled: !saving,
-                            decoration: const InputDecoration(
-                              labelText: 'Profile name',
-                            ),
-                            textCapitalization: TextCapitalization.words,
-                            autofillHints: const [AutofillHints.name],
-                            maxLength: 100,
-                            validator: AuthValidation.name,
-                            textInputAction: TextInputAction.done,
-                            onFieldSubmitted: (_) => _submit(),
-                          ),
-                        if (widget.setting == AccountSetting.email) ...[
-                          const Text(
-                            'We’ll send a verification link to your new email address.',
-                          ),
-                          const SizedBox(height: 16),
-                          TextFormField(
-                            controller: _value,
-                            enabled: !saving,
-                            decoration: const InputDecoration(
-                              labelText: 'New email address',
-                            ),
-                            keyboardType: TextInputType.emailAddress,
-                            autocorrect: false,
-                            textInputAction: TextInputAction.next,
-                            validator: (value) =>
-                                AuthValidation.email(value) ??
-                                (value!.trim().toLowerCase() ==
-                                        widget.user.email?.toLowerCase()
-                                    ? 'Enter a different email address.'
-                                    : null),
-                          ),
-                          const SizedBox(height: 16),
-                        ],
-                        if (widget.setting != AccountSetting.name) ...[
-                          _PasswordField(
-                            controller: _currentPassword,
-                            label: 'Current password',
-                            enabled: !saving,
-                            validator: (value) => value == null || value.isEmpty
-                                ? 'Enter your current password.'
-                                : null,
-                          ),
-                          const SizedBox(height: 16),
-                        ],
-                        if (widget.setting == AccountSetting.password) ...[
-                          _PasswordField(
-                            controller: _newPassword,
-                            label: 'New password',
-                            enabled: !saving,
-                            newPassword: true,
-                            validator: (value) =>
-                                AuthValidation.password(value) ??
-                                (value == _currentPassword.text
-                                    ? 'Choose a different password.'
-                                    : null),
-                          ),
-                          const SizedBox(height: 16),
-                          _PasswordField(
-                            controller: _confirmation,
-                            label: 'Confirm new password',
-                            enabled: !saving,
-                            newPassword: true,
-                            validator: (value) =>
-                                AuthValidation.confirmPassword(
-                                  value,
-                                  _newPassword.text,
-                                ),
-                          ),
-                          const SizedBox(height: 16),
-                        ],
-                        if (state.hasError) ...[
-                          Semantics(
-                            liveRegion: true,
-                            child: Text(
-                              authErrorMessage(state.error),
-                              style: TextStyle(color: theme.colorScheme.error),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                        ],
-                        FilledButton(
-                          onPressed: saving ? null : _submit,
-                          child: saving
-                              ? const SizedBox(
-                                  width: 24,
-                                  height: 24,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    semanticsLabel: 'Saving changes',
-                                  ),
-                                )
-                              : Text(
-                                  widget.setting == AccountSetting.email
-                                      ? 'Send verification email'
-                                      : 'Save changes',
-                                ),
-                        ),
+                        const SizedBox(height: 16),
                       ],
+                      FilledButton(
+                        onPressed: saving ? null : _submit,
+                        child: saving
+                            ? const SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  semanticsLabel: 'Saving changes',
+                                ),
+                              )
+                            : const Text('Save changes'),
+                      ),
                     ],
                   ),
                 ),

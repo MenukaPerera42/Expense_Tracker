@@ -19,10 +19,6 @@ class AccountSettingsController extends Notifier<AsyncValue<void>> {
 
   Future<bool> updateName(String name) =>
       _run((repo) => repo.updateName(name.trim()));
-  Future<bool> changeEmail(String email, String currentPassword) => _run(
-    (repo) =>
-        repo.changeEmail(email: email.trim(), currentPassword: currentPassword),
-  );
   Future<bool> changePassword(String currentPassword, String newPassword) =>
       _run(
         (repo) => repo.changePassword(
