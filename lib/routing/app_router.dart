@@ -197,17 +197,28 @@ class _PersistentNavBar extends StatelessWidget {
         children: [
           // ── Full-width nav bar card ───────────────────────────────────────────
           Container(
-            height: 72 + MediaQuery.of(context).padding.bottom, // Account for safe area internally
-            padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
+            height:
+                72 +
+                MediaQuery.of(context)
+                    .padding
+                    .bottom, // Account for safe area internally
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).padding.bottom,
+            ),
             decoration: BoxDecoration(
               color: navBg,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(26),
+              ),
               boxShadow: [
                 BoxShadow(
                   color: shadowColor,
                   blurRadius: 24,
                   spreadRadius: 0,
-                  offset: const Offset(0, -4), // Shadow goes UP since it's attached to bottom
+                  offset: const Offset(
+                    0,
+                    -4,
+                  ), // Shadow goes UP since it's attached to bottom
                 ),
                 if (!isDark)
                   BoxShadow(
@@ -257,7 +268,10 @@ class _PersistentNavBar extends StatelessWidget {
                 height: 64,
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [Color(0xFF0D47A1), Color(0xFF002171)], // Dark Blue, matching top card
+                    colors: [
+                      Color(0xFF0D47A1),
+                      Color(0xFF002171),
+                    ], // Dark Blue, matching top card
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),

@@ -62,12 +62,14 @@ class _AnalyticsBody extends StatelessWidget {
         AppSpacing.extraLarge,
       ),
       children: [
-        // Page title
-        Text('Analytics', style: tt.headlineSmall),
-        const SizedBox(height: 4),
-        Text(
-          DateFormat.yMMMM().format(summary.month),
-          style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
+        // Page title & month selector
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Text('Analytics', style: tt.headlineSmall),
+            _MonthChip(month: summary.month),
+          ],
         ),
         const SizedBox(height: AppSpacing.large),
 
@@ -480,6 +482,49 @@ class _SectionLabel extends StatelessWidget {
         Text(
           subtitle,
           style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+        ),
+      ],
+    );
+  }
+}
+
+// ─── Month chip ──────────────────────────────────────────────────────────────
+
+class _MonthChip extends ConsumerWidget {
+  const _MonthChip({required this.month});
+  final DateTime month;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        GestureDetector(
+          onTap: () => ref.read(selectedMonthProvider.notifier).previousMonth(),
+          child: Icon(Icons.chevron_left, size: 24, color: cs.primary),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          DateFormat.yMMM().format(month),
+          style: tt.labelLarge?.copyWith(
+            color: cs.primary,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(width: 4),
+        GestureDetector(
+          onTap: MonthNavigation.isCurrentMonth(month)
+              ? null
+              : () => ref.read(selectedMonthProvider.notifier).nextMonth(),
+          child: Icon(
+            Icons.chevron_right,
+            size: 24,
+            color: MonthNavigation.isCurrentMonth(month)
+                ? cs.onSurfaceVariant.withOpacity(0.3)
+                : cs.primary,
+          ),
         ),
       ],
     );

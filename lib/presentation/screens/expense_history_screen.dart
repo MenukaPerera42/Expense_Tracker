@@ -9,6 +9,7 @@ class ExpenseHistoryScreen extends StatelessWidget {
   const ExpenseHistoryScreen({super.key});
 
   @override
+  Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
         child: Column(

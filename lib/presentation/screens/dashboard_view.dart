@@ -157,26 +157,15 @@ class _Header extends ConsumerWidget {
 
     return Row(
       children: [
-        // ── Avatar with gradient ring ────────────────────────────────────
-        Container(
-          padding: const EdgeInsets.all(2.5),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: const LinearGradient(
-              colors: [Color(0xFF1976D2), Color(0xFF42A5F5)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-          child: CircleAvatar(
-            radius: 20,
-            backgroundColor: cs.primaryContainer,
-            child: Text(
-              displayName[0].toUpperCase(),
-              style: tt.titleMedium?.copyWith(
-                fontWeight: FontWeight.w800,
-                color: cs.onPrimaryContainer,
-              ),
+        // ── Avatar ────────────────────────────────────────────────────────
+        CircleAvatar(
+          radius: 22,
+          backgroundColor: cs.primaryContainer,
+          child: Text(
+            displayName[0].toUpperCase(),
+            style: tt.titleMedium?.copyWith(
+              fontWeight: FontWeight.w800,
+              color: cs.onPrimaryContainer,
             ),
           ),
         ),
