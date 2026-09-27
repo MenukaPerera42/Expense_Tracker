@@ -198,55 +198,7 @@ class _Header extends ConsumerWidget {
             ],
           ),
         ),
-        // ── Creative logout button ───────────────────────────────────────
-        GestureDetector(
-          onTap: isLoggingOut
-              ? null
-              : () => ref.read(authActionProvider.notifier).logout(),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: isLoggingOut
-                  ? cs.surfaceContainerHighest
-                  : cs.errorContainer.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: isLoggingOut
-                    ? cs.outlineVariant
-                    : cs.error.withOpacity(0.35),
-                width: 1,
-              ),
-            ),
-            child: isLoggingOut
-                ? SizedBox(
-                    width: 14,
-                    height: 14,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: cs.error,
-                    ),
-                  )
-                : Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.logout_rounded,
-                        size: 14,
-                        color: cs.error.withOpacity(0.8),
-                      ),
-                      const SizedBox(width: 5),
-                      Text(
-                        'Sign out',
-                        style: tt.labelSmall?.copyWith(
-                          color: cs.error.withOpacity(0.8),
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-          ),
-        ),
+        // Removed logout button
       ],
     );
   }
@@ -275,17 +227,15 @@ class _BalanceCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.large),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: isDark
-              ? [const Color(0xFF3F51B5), const Color(0xFF1A237E)]
-              : [const Color(0xFF5C6BC0), const Color(0xFF3949AB)],
+        gradient: const LinearGradient(
+          colors: [Color(0xFF0D47A1), Color(0xFF002171)], // Dark Blue
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF5C6BC0).withOpacity(0.35),
+            color: const Color(0xFF0D47A1).withOpacity(0.35),
             blurRadius: 24,
             offset: const Offset(0, 10),
           ),
@@ -438,9 +388,9 @@ class _SpendingLineChart extends ConsumerWidget {
             height: 170,
             child: LineChart(
               LineChartData(
-                minY: 0,
+                minY: -maxVal * 0.05, // Slight padding below 0 to avoid bottom cropping
                 maxY: maxY,
-                clipData: const FlClipData.all(),
+                clipData: const FlClipData.none(), // Don't crop dots at the edges
                 gridData: FlGridData(
                   drawVerticalLine: false,
                   horizontalInterval: maxY / 4,

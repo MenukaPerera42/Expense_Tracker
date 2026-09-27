@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../constants/app_spacing.dart';
 
 abstract final class AppTheme {
-  // Dark blue accent
+  // Dark blue palette
   static const _seedColor = Color(0xFF1565C0);
-  static const _cornerRadius = 20.0;
+  static const _cornerRadius = 16.0;
 
   static ThemeData light() => _build(Brightness.light);
   static ThemeData dark() => _build(Brightness.dark);
@@ -21,10 +22,20 @@ abstract final class AppTheme {
       surfaceContainerHighest:
           isDark ? const Color(0xFF1E3048) : const Color(0xFFDCE8F8),
     );
-    final base = ThemeData(useMaterial3: true, colorScheme: colors);
+
+    // Poppins base text theme
+    final poppins = GoogleFonts.poppinsTextTheme();
+
+    final base = ThemeData(
+      useMaterial3: true,
+      colorScheme: colors,
+      textTheme: poppins,
+    );
+
     const shape = RoundedRectangleBorder(
       borderRadius: BorderRadius.all(Radius.circular(_cornerRadius)),
     );
+
     final buttonStyle = ButtonStyle(
       minimumSize: const WidgetStatePropertyAll(Size(48, 48)),
       padding: const WidgetStatePropertyAll(
@@ -34,39 +45,113 @@ abstract final class AppTheme {
         ),
       ),
       shape: const WidgetStatePropertyAll(shape),
-      textStyle: WidgetStatePropertyAll(base.textTheme.labelLarge),
+      textStyle: WidgetStatePropertyAll(
+        GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 14),
+      ),
     );
+
     final border = OutlineInputBorder(
       borderRadius: BorderRadius.circular(_cornerRadius),
       borderSide: BorderSide(color: colors.outline),
     );
+
+    // Poppins-tuned text theme with Apple-like weights
+    final textTheme = base.textTheme.copyWith(
+      displayLarge: GoogleFonts.poppins(
+        fontSize: 57,
+        fontWeight: FontWeight.w700,
+        letterSpacing: -0.5,
+        color: colors.onSurface,
+      ),
+      headlineLarge: GoogleFonts.poppins(
+        fontSize: 32,
+        fontWeight: FontWeight.w800,
+        letterSpacing: -0.5,
+        color: colors.onSurface,
+      ),
+      headlineMedium: GoogleFonts.poppins(
+        fontSize: 26,
+        fontWeight: FontWeight.w700,
+        letterSpacing: -0.3,
+        color: colors.onSurface,
+      ),
+      headlineSmall: GoogleFonts.poppins(
+        fontSize: 22,
+        fontWeight: FontWeight.w700,
+        color: colors.onSurface,
+      ),
+      titleLarge: GoogleFonts.poppins(
+        fontSize: 18,
+        fontWeight: FontWeight.w600,
+        color: colors.onSurface,
+      ),
+      titleMedium: GoogleFonts.poppins(
+        fontSize: 15,
+        fontWeight: FontWeight.w600,
+        color: colors.onSurface,
+      ),
+      titleSmall: GoogleFonts.poppins(
+        fontSize: 13,
+        fontWeight: FontWeight.w600,
+        color: colors.onSurface,
+      ),
+      bodyLarge: GoogleFonts.poppins(
+        fontSize: 16,
+        fontWeight: FontWeight.w400,
+        height: 1.5,
+        color: colors.onSurface,
+      ),
+      bodyMedium: GoogleFonts.poppins(
+        fontSize: 14,
+        fontWeight: FontWeight.w400,
+        height: 1.5,
+        color: colors.onSurface,
+      ),
+      bodySmall: GoogleFonts.poppins(
+        fontSize: 12,
+        fontWeight: FontWeight.w400,
+        color: colors.onSurfaceVariant,
+      ),
+      labelLarge: GoogleFonts.poppins(
+        fontSize: 13,
+        fontWeight: FontWeight.w600,
+        color: colors.onSurface,
+      ),
+      labelMedium: GoogleFonts.poppins(
+        fontSize: 11,
+        fontWeight: FontWeight.w500,
+        color: colors.onSurfaceVariant,
+      ),
+      labelSmall: GoogleFonts.poppins(
+        fontSize: 10,
+        fontWeight: FontWeight.w500,
+        letterSpacing: 0.2,
+        color: colors.onSurfaceVariant,
+      ),
+    );
+
     return base.copyWith(
       scaffoldBackgroundColor: colors.surface,
-      textTheme: base.textTheme.copyWith(
-        headlineLarge: base.textTheme.headlineLarge?.copyWith(
-          fontWeight: FontWeight.w800,
-          letterSpacing: -0.5,
-        ),
-        headlineMedium: base.textTheme.headlineMedium?.copyWith(
-          fontWeight: FontWeight.w700,
-          letterSpacing: -0.5,
-        ),
-        headlineSmall: base.textTheme.headlineSmall?.copyWith(
-          fontWeight: FontWeight.w700,
-        ),
-        titleLarge: base.textTheme.titleLarge?.copyWith(
+      textTheme: textTheme,
+      appBarTheme: AppBarTheme(
+        backgroundColor: colors.surface,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        titleTextStyle: GoogleFonts.poppins(
+          fontSize: 17,
           fontWeight: FontWeight.w600,
+          color: colors.onSurface,
         ),
-        titleMedium: base.textTheme.titleMedium?.copyWith(
-          fontWeight: FontWeight.w600,
-        ),
-        bodyLarge: base.textTheme.bodyLarge?.copyWith(height: 1.5),
-        bodyMedium: base.textTheme.bodyMedium?.copyWith(height: 1.5),
+        iconTheme: IconThemeData(color: colors.onSurface),
       ),
       inputDecorationTheme: InputDecorationThemeData(
         filled: true,
         fillColor: colors.surfaceContainerLow,
-        contentPadding: const EdgeInsets.all(AppSpacing.medium),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.medium,
+          vertical: 14,
+        ),
         border: border,
         enabledBorder: border,
         focusedBorder: border.copyWith(
@@ -78,6 +163,8 @@ abstract final class AppTheme {
         focusedErrorBorder: border.copyWith(
           borderSide: BorderSide(color: colors.error, width: 2),
         ),
+        labelStyle: GoogleFonts.poppins(fontSize: 14, color: colors.onSurfaceVariant),
+        hintStyle: GoogleFonts.poppins(fontSize: 14, color: colors.onSurfaceVariant),
         errorMaxLines: 3,
       ),
       filledButtonTheme: FilledButtonThemeData(style: buttonStyle),
@@ -97,7 +184,8 @@ abstract final class AppTheme {
           borderRadius: BorderRadius.circular(_cornerRadius / 2),
         ),
         backgroundColor: colors.inverseSurface,
-        contentTextStyle: base.textTheme.bodyMedium?.copyWith(
+        contentTextStyle: GoogleFonts.poppins(
+          fontSize: 13,
           color: colors.onInverseSurface,
         ),
         actionTextColor: colors.inversePrimary,

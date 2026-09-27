@@ -266,9 +266,9 @@ class _TrendCard extends StatelessWidget {
             height: 180,
             child: LineChart(
               LineChartData(
-                minY: 0,
+                minY: -maxVal * 0.05,
                 maxY: maxY,
-                clipData: const FlClipData.all(),
+                clipData: const FlClipData.none(),
                 gridData: FlGridData(
                   drawVerticalLine: false,
                   horizontalInterval: maxY / 4,

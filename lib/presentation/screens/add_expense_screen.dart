@@ -55,37 +55,50 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
         }
       },
       child: Scaffold(
-        appBar: AppBar(title: const Text('Add expense')),
         body: SafeArea(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(AppSpacing.large),
-            child: ExpenseForm(
-              initialTitle: '',
-              initialAmount: '',
-              initialCategory: null,
-              initialDate: DateTime.now(),
-              initialNote: '',
-              saving: saving,
-              submitLabel: 'Save expense',
-              onDirtyChanged: (dirty) => setState(() => _dirty = dirty),
-              onSubmit:
-                  ({
-                    required title,
-                    required amount,
-                    required category,
-                    required date,
-                    required note,
-                  }) {
-                    ref
-                        .read(addExpenseControllerProvider.notifier)
-                        .submit(
-                          title: title,
-                          amount: amount,
-                          category: category,
-                          date: date,
-                          note: note,
-                        );
-                  },
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.large,
+              vertical: AppSpacing.extraLarge,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Add Expense',
+                  style: Theme.of(context).textTheme.headlineMedium,
+                ),
+                const SizedBox(height: AppSpacing.large),
+                ExpenseForm(
+                  initialTitle: '',
+                  initialAmount: '',
+                  initialCategory: null,
+                  initialDate: DateTime.now(),
+                  initialNote: '',
+                  saving: saving,
+                  submitLabel: 'Save expense',
+                  onDirtyChanged: (dirty) => setState(() => _dirty = dirty),
+                  onSubmit:
+                      ({
+                        required title,
+                        required amount,
+                        required category,
+                        required date,
+                        required note,
+                      }) {
+                        ref
+                            .read(addExpenseControllerProvider.notifier)
+                            .submit(
+                              title: title,
+                              amount: amount,
+                              category: category,
+                              date: date,
+                              note: note,
+                            );
+                      },
+                ),
+                // Closing bracket for children of Column
+              ],
             ),
           ),
         ),

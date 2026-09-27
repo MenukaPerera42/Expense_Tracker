@@ -127,23 +127,23 @@ class _AppShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // The child provides its own body (Scaffold or plain widget)
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: child,
       bottomNavigationBar: _PersistentNavBar(currentLocation: location),
     );
   }
 }
 
-// ─── Persistent nav bar ───────────────────────────────────────────────────────
+// ─── Apple-style persistent nav bar ──────────────────────────────────────────
 
 class _PersistentNavBar extends StatelessWidget {
   const _PersistentNavBar({required this.currentLocation});
 
   final String currentLocation;
 
-  static const _tabs = [
+  static const _leftTabs = [
     _TabData(
-      icon: Icons.home_rounded,
+      icon: Icons.home_outlined,
       activeIcon: Icons.home_rounded,
       label: 'Home',
       path: AppRouter.homePath,
@@ -154,13 +154,9 @@ class _PersistentNavBar extends StatelessWidget {
       label: 'Analytics',
       path: AppRouter.analyticsPath,
     ),
-    _TabData(
-      icon: Icons.add_rounded,
-      activeIcon: Icons.add_rounded,
-      label: 'Add',
-      path: AppRouter.addExpensePath,
-      isAction: true,
-    ),
+  ];
+
+  static const _rightTabs = [
     _TabData(
       icon: Icons.receipt_long_outlined,
       activeIcon: Icons.receipt_long_rounded,
@@ -179,47 +175,110 @@ class _PersistentNavBar extends StatelessWidget {
     if (tab.path == AppRouter.homePath) {
       return currentLocation == AppRouter.homePath;
     }
+    if (tab.path == AppRouter.expenseHistoryPath) {
+      return currentLocation == AppRouter.expenseHistoryPath; // Strict match
+    }
     return currentLocation.startsWith(tab.path);
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    const bg = Color(0xFF0A1628); // Deep navy
+    final navBg = isDark ? const Color(0xFF152236) : Colors.white;
+    final shadowColor = isDark
+        ? Colors.black.withOpacity(0.40)
+        : Colors.black.withOpacity(0.09);
 
     return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 6, 16, 10),
-        child: Container(
-          height: 70,
-          decoration: BoxDecoration(
-            color: bg,
-            borderRadius: BorderRadius.circular(36),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF1565C0).withOpacity(0.35),
-                blurRadius: 24,
-                spreadRadius: -4,
-                offset: const Offset(0, 10),
+      bottom: false, // Extend to the absolute bottom edge
+      child: Stack(
+        clipBehavior: Clip.none,
+        alignment: Alignment.bottomCenter,
+        children: [
+          // ── Full-width nav bar card ───────────────────────────────────────────
+          Container(
+            height: 72 + MediaQuery.of(context).padding.bottom, // Account for safe area internally
+            padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
+            decoration: BoxDecoration(
+              color: navBg,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
+              boxShadow: [
+                BoxShadow(
+                  color: shadowColor,
+                  blurRadius: 24,
+                  spreadRadius: 0,
+                  offset: const Offset(0, -4), // Shadow goes UP since it's attached to bottom
+                ),
+                if (!isDark)
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.04),
+                    blurRadius: 1,
+                    offset: const Offset(0, -1),
+                  ),
+              ],
+            ),
+            child: Row(
+              children: [
+                // Left two tabs
+                ..._leftTabs.map(
+                  (tab) => Expanded(
+                    child: _NavTile(
+                      tab: tab,
+                      active: _isActive(tab),
+                      isDark: isDark,
+                      onTap: () => context.go(tab.path),
+                    ),
+                  ),
+                ),
+                // Gap for the raised center button
+                const SizedBox(width: 68),
+                // Right two tabs
+                ..._rightTabs.map(
+                  (tab) => Expanded(
+                    child: _NavTile(
+                      tab: tab,
+                      active: _isActive(tab),
+                      isDark: isDark,
+                      onTap: () => context.go(tab.path),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // ── Raised blue circle Add button ─────────────────────────────
+          Positioned(
+            top: -24,
+            child: GestureDetector(
+              onTap: () => context.go(AppRouter.addExpensePath),
+              child: Container(
+                width: 64,
+                height: 64,
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xFF0D47A1), Color(0xFF002171)], // Dark Blue, matching top card
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  shape: BoxShape.circle,
+                  // Shadow removed as requested
+                ),
+                child: const Icon(
+                  Icons.add_rounded,
+                  color: Colors.white,
+                  size: 36,
+                ),
               ),
-            ],
+            ),
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: _tabs.map((tab) {
-              final active = _isActive(tab);
-              return _NavButton(
-                tab: tab,
-                active: active,
-                onTap: () => context.go(tab.path),
-              );
-            }).toList(),
-          ),
-        ),
+        ],
       ),
     );
   }
 }
+
+// ─── Tab data ─────────────────────────────────────────────────────────────────
 
 class _TabData {
   const _TabData({
@@ -227,104 +286,63 @@ class _TabData {
     required this.activeIcon,
     required this.label,
     required this.path,
-    this.isAction = false,
   });
 
   final IconData icon;
   final IconData activeIcon;
   final String label;
   final String path;
-  final bool isAction;
+  // Retain the field so existing const instances remain hot-reload compatible.
+  final bool isAction = false;
 }
 
-class _NavButton extends StatelessWidget {
-  const _NavButton({
+// ─── Nav tile ─────────────────────────────────────────────────────────────────
+
+class _NavTile extends StatelessWidget {
+  const _NavTile({
     required this.tab,
     required this.active,
+    required this.isDark,
     required this.onTap,
   });
 
   final _TabData tab;
   final bool active;
+  final bool isDark;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    // Action (Add) button — pill-shaped accent button
-    if (tab.isAction) {
-      return GestureDetector(
-        onTap: onTap,
-        child: Container(
-          width: 52,
-          height: 52,
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF1976D2), Color(0xFF0D47A1)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF1565C0).withOpacity(0.55),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: const Icon(Icons.add_rounded, color: Colors.white, size: 28),
-        ),
-      );
-    }
-
-    // Regular tab button
-    const activeColor = Color(0xFF90CAF9); // light-blue-200
-    const inactiveColor = Color(0xFF546E7A); // blue-grey
+    final activeColor = const Color(0xFF1565C0);
+    final inactiveColor = isDark
+        ? const Color(0xFF607D8B)
+        : const Color(0xFF9E9E9E);
 
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeOutCubic,
-        width: 64,
-        height: 60,
-        decoration: BoxDecoration(
-          color: active
-              ? const Color(0xFF1565C0).withOpacity(0.22)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(24),
-        ),
+      child: SizedBox(
+        height: 72,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Glowing dot indicator above active icon
-            AnimatedOpacity(
-              duration: const Duration(milliseconds: 200),
-              opacity: active ? 1.0 : 0.0,
-              child: Container(
-                width: 4,
-                height: 4,
-                margin: const EdgeInsets.only(bottom: 4),
-                decoration: const BoxDecoration(
-                  color: activeColor,
-                  shape: BoxShape.circle,
-                ),
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 180),
+              child: Icon(
+                active ? tab.activeIcon : tab.icon,
+                key: ValueKey(active),
+                color: active ? activeColor : inactiveColor,
+                size: 22,
               ),
             ),
-            Icon(
-              active ? tab.activeIcon : tab.icon,
-              color: active ? activeColor : inactiveColor,
-              size: 22,
-            ),
-            const SizedBox(height: 3),
+            const SizedBox(height: 4),
             Text(
               tab.label,
               style: TextStyle(
+                fontFamily: 'Poppins',
                 color: active ? activeColor : inactiveColor,
-                fontSize: 9,
+                fontSize: 10.5,
                 fontWeight: active ? FontWeight.w700 : FontWeight.w400,
-                letterSpacing: 0.3,
               ),
             ),
           ],
@@ -334,9 +352,8 @@ class _NavButton extends StatelessWidget {
   }
 }
 
-// ─── Page wrappers (no Scaffold — shell provides it) ─────────────────────────
+// ─── Page wrappers ────────────────────────────────────────────────────────────
 
-/// Dashboard page — wraps DashboardView with SafeArea for status bar.
 class _DashboardPage extends StatelessWidget {
   const _DashboardPage();
 
@@ -346,7 +363,6 @@ class _DashboardPage extends StatelessWidget {
   }
 }
 
-/// Analytics page wrapper.
 class _AnalyticsPage extends StatelessWidget {
   const _AnalyticsPage();
 

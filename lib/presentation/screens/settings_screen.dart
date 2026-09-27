@@ -21,23 +21,24 @@ class SettingsScreen extends ConsumerWidget {
       }
     });
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          children: const [
-            _SectionHeader('Appearance'),
-            _AppearanceTile(),
-            SizedBox(height: 8),
-            Divider(height: 1),
-            _SectionHeader('Currency'),
-            _CurrencyTile(),
-            Divider(height: 1),
-            _SectionHeader('Account'),
-            _LogoutTile(),
-            Divider(height: 1),
-            _SectionHeader('About'),
-            _AppInfoTile(),
+          padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+          children: [
+            Text('Settings', style: Theme.of(context).textTheme.headlineMedium),
+            const SizedBox(height: 24),
+            const _SectionHeader('Appearance'),
+            const _AppearanceTile(),
+            const SizedBox(height: 16),
+            const Divider(height: 1),
+            const _SectionHeader('Currency'),
+            const _CurrencyTile(),
+            const Divider(height: 1),
+            const _SectionHeader('Account'),
+            const _LogoutTile(),
+            const Divider(height: 1),
+            const _SectionHeader('About'),
+            const _AppInfoTile(),
           ],
         ),
       ),
@@ -59,11 +60,12 @@ class _SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+      padding: const EdgeInsets.fromLTRB(0, 24, 0, 12),
       child: Text(
         label,
-        style: theme.textTheme.labelLarge?.copyWith(
+        style: theme.textTheme.titleMedium?.copyWith(
           color: theme.colorScheme.primary,
+          fontWeight: FontWeight.w700,
         ),
       ),
     );
