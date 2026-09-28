@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/config/currency_config.dart';
 import '../../core/constants/app_spacing.dart';
 import '../../domain/entities/expense_category.dart';
 import '../../domain/usecases/expense_validation.dart';
+import '../providers/currency_preference_provider.dart';
 import 'category_selector.dart';
 import 'date_field.dart';
 
@@ -23,7 +25,7 @@ typedef ExpenseFormSubmit = void Function({
 /// The Add/Edit expense form: title, amount, category, date, optional note.
 /// Shared by AddExpenseScreen and the expense editor so the fields,
 /// validation and "no future dates" product rule live in exactly one place.
-class ExpenseForm extends StatefulWidget {
+class ExpenseForm extends ConsumerStatefulWidget {
   const ExpenseForm({
     super.key,
     required this.initialTitle,
@@ -52,10 +54,10 @@ class ExpenseForm extends StatefulWidget {
   final ValueChanged<bool>? onDirtyChanged;
 
   @override
-  State<ExpenseForm> createState() => ExpenseFormState();
+  ConsumerState<ExpenseForm> createState() => ExpenseFormState();
 }
 
-class ExpenseFormState extends State<ExpenseForm> {
+class ExpenseFormState extends ConsumerState<ExpenseForm> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _titleController;
   late final TextEditingController _amountController;
@@ -173,7 +175,7 @@ class ExpenseFormState extends State<ExpenseForm> {
             enabled: !saving,
             decoration: InputDecoration(
               labelText: 'Amount',
-              prefixText: '${CurrencyConfig.defaultCurrency.code} ',
+              prefixText: '${ref.watch(currencyPreferenceProvider).code} ',
             ),
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             inputFormatters: [

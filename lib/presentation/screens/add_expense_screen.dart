@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/constants/app_spacing.dart';
 import '../../routing/close_expense_screen.dart';
+import '../providers/currency_preference_provider.dart';
 import '../providers/expense_providers.dart';
 import '../widgets/discard_changes_dialog.dart';
 import '../widgets/expense_form.dart';
@@ -100,7 +101,10 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
                             .read(addExpenseControllerProvider.notifier)
                             .submit(
                               title: title,
-                              amount: amount,
+                              amount: ref
+                                  .read(currencyFormatterProvider)
+                                  .toBaseAmount(double.parse(amount))
+                                  .toString(),
                               category: category,
                               date: date,
                               note: note,

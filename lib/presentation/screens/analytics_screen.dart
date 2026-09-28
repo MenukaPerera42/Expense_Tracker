@@ -9,6 +9,7 @@ import '../../domain/entities/expense_category.dart';
 import '../../domain/usecases/expense_chart_data.dart';
 import '../../domain/usecases/expense_summary.dart';
 import '../../domain/usecases/month_navigation.dart';
+import '../providers/currency_preference_provider.dart';
 import '../providers/expense_providers.dart';
 import '../widgets/category_selector.dart';
 import '../widgets/scrollable_fill.dart';
@@ -146,12 +147,12 @@ class _AnalyticsBody extends ConsumerWidget {
 
 // ─── Summary totals row ───────────────────────────────────────────────────────
 
-class _SummaryRow extends StatelessWidget {
+class _SummaryRow extends ConsumerWidget {
   const _SummaryRow({required this.summary});
   final MonthlyExpenseSummary summary;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     double topAmount = 0;
     ExpenseCategory? topCat;
     for (final e in summary.categoryTotals.entries) {
@@ -168,7 +169,7 @@ class _SummaryRow extends StatelessWidget {
             icon: Icons.account_balance_wallet_rounded,
             iconColor: const Color(0xFF1976D2),
             label: 'Total Spent',
-            value: CurrencyConfig.defaultCurrency.format(summary.total),
+            value: ref.watch(currencyFormatterProvider).format(summary.total),
           ),
         ),
         const SizedBox(width: AppSpacing.small),
@@ -245,13 +246,13 @@ class _InfoTile extends StatelessWidget {
 
 // ─── 6-month line chart card ─────────────────────────────────────────────────
 
-class _TrendCard extends StatelessWidget {
+class _TrendCard extends ConsumerWidget {
   const _TrendCard({required this.pointsAsync, required this.timeframe});
   final AsyncValue<List<SpendingPoint>> pointsAsync;
   final ChartTimeframe timeframe;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
 
@@ -356,7 +357,7 @@ class _TrendCard extends StatelessWidget {
                             ? 'Day ${pt.day}\n'
                             : '';
                         return BarTooltipItem(
-                          '$dayStr${CurrencyConfig.defaultCurrency.format(rod.toY)}',
+                          '$dayStr${ref.watch(currencyFormatterProvider).format(rod.toY)}',
                           tt.labelSmall!.copyWith(
                             color: cs.onInverseSurface,
                             fontWeight: FontWeight.w600,
@@ -469,7 +470,7 @@ class _TrendCard extends StatelessWidget {
                       }
 
                       return LineTooltipItem(
-                        '$prefix${CurrencyConfig.defaultCurrency.format(s.y)}',
+                        '$prefix${ref.watch(currencyFormatterProvider).format(s.y)}',
                         tt.labelSmall!.copyWith(
                           color: cs.onInverseSurface,
                           fontWeight: FontWeight.w600,
@@ -519,7 +520,7 @@ class _TrendCard extends StatelessWidget {
 
 // ─── Category breakdown row ───────────────────────────────────────────────────
 
-class _CategoryBreakdownRow extends StatelessWidget {
+class _CategoryBreakdownRow extends ConsumerWidget {
   const _CategoryBreakdownRow({required this.slice, required this.total});
 
   final CategorySlice slice;
@@ -538,7 +539,7 @@ class _CategoryBreakdownRow extends StatelessWidget {
   ];
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
     final barColor = _barColors[slice.category.index % _barColors.length];
@@ -598,7 +599,7 @@ class _CategoryBreakdownRow extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                CurrencyConfig.defaultCurrency.format(slice.amount),
+                ref.watch(currencyFormatterProvider).format(slice.amount),
                 style: tt.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
               ),
               Text(

@@ -12,6 +12,7 @@ import '../../domain/usecases/expense_summary.dart';
 import '../../domain/usecases/month_navigation.dart';
 import '../../routing/app_router.dart';
 import '../providers/auth_providers.dart';
+import '../providers/currency_preference_provider.dart';
 import '../providers/expense_providers.dart';
 import '../widgets/category_selector.dart';
 import '../widgets/scrollable_fill.dart';
@@ -199,12 +200,12 @@ class _Header extends ConsumerWidget {
 
 // ─── Balance hero card ───────────────────────────────────────────────────────
 
-class _BalanceCard extends StatelessWidget {
+class _BalanceCard extends ConsumerWidget {
   const _BalanceCard({required this.summary});
   final MonthlyExpenseSummary summary;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final tt = Theme.of(context).textTheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -263,7 +264,7 @@ class _BalanceCard extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            CurrencyConfig.defaultCurrency.format(summary.total),
+            ref.watch(currencyFormatterProvider).format(summary.total),
             style: tt.headlineLarge?.copyWith(
               color: Colors.white,
               fontWeight: FontWeight.w800,
@@ -434,7 +435,7 @@ class _SpendingLineChart extends ConsumerWidget {
                     getTooltipItems: (touchedSpots) => touchedSpots
                         .map(
                           (s) => LineTooltipItem(
-                            '${DateFormat.MMM().format(points[s.x.toInt()].month)}\n${CurrencyConfig.defaultCurrency.format(s.y)}',
+                            '${DateFormat.MMM().format(points[s.x.toInt()].month)}\n${ref.watch(currencyFormatterProvider).format(s.y)}',
                             tt.labelSmall!.copyWith(
                               color: cs.onInverseSurface,
                               fontWeight: FontWeight.w600,
@@ -485,7 +486,7 @@ class _SpendingLineChart extends ConsumerWidget {
 
 // ─── Category rows ────────────────────────────────────────────────────────────
 
-class _CategoryRow extends StatelessWidget {
+class _CategoryRow extends ConsumerWidget {
   const _CategoryRow({
     required this.category,
     required this.amount,
@@ -497,7 +498,7 @@ class _CategoryRow extends StatelessWidget {
   final double total;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
     final fraction = total > 0 ? (amount / total).clamp(0.0, 1.0) : 0.0;
@@ -557,7 +558,7 @@ class _CategoryRow extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                CurrencyConfig.defaultCurrency.format(amount),
+                ref.watch(currencyFormatterProvider).format(amount),
                 style: tt.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
               ),
               Text(
@@ -574,13 +575,13 @@ class _CategoryRow extends StatelessWidget {
 
 // ─── Recent transaction row ──────────────────────────────────────────────────
 
-class _TransactionRow extends StatelessWidget {
+class _TransactionRow extends ConsumerWidget {
   const _TransactionRow({required this.expense, required this.onTap});
   final Expense expense;
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
     return InkWell(
@@ -632,7 +633,7 @@ class _TransactionRow extends StatelessWidget {
             ),
             // Amount
             Text(
-              '−${CurrencyConfig.defaultCurrency.format(expense.amount)}',
+              '−${ref.watch(currencyFormatterProvider).format(expense.amount)}',
               style: tt.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w700,
                 color: cs.error,

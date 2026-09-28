@@ -25,6 +25,35 @@ class CurrencyConfig {
   final String locale;
   final int decimalDigits;
 
+  /// Format a base amount (in LKR) into this currency, using the provided exchange rates.
+  String formatConverted(num baseAmount, Map<String, double>? rates) {
+    final rate = rates?[code] ?? (code == 'LKR' ? 1.0 : _fallbackRate());
+    final convertedAmount = baseAmount * rate;
+    return format(convertedAmount);
+  }
+
+  /// Convert an entered amount in this currency back to the base currency (LKR).
+  double toBaseAmount(double enteredAmount, Map<String, double>? rates) {
+    final rate = rates?[code] ?? (code == 'LKR' ? 1.0 : _fallbackRate());
+    if (rate == 0) return enteredAmount;
+    return enteredAmount / rate;
+  }
+
+  double _fallbackRate() {
+    switch (code) {
+      case 'USD':
+        return 0.003;
+      case 'EUR':
+        return 0.0028;
+      case 'GBP':
+        return 0.0024;
+      case 'INR':
+        return 0.25;
+      default:
+        return 1.0;
+    }
+  }
+
   String format(num amount) => NumberFormat.currency(
     locale: locale,
     name: code,

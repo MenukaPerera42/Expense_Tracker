@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_spacing.dart';
 import '../../routing/close_expense_screen.dart';
 import '../../domain/entities/expense.dart';
+import '../providers/currency_preference_provider.dart';
 import '../providers/expense_providers.dart';
 import '../widgets/discard_changes_dialog.dart';
 import '../widgets/expense_form.dart';
@@ -82,10 +83,11 @@ class _EditExpenseFormViewState extends ConsumerState<EditExpenseFormView> {
   /// Plain decimal text for the amount field — not currency-formatted —
   /// since it must round-trip through ExpenseValidation.amount unchanged.
   String get _initialAmount {
-    final amount = widget.expense.amount;
+    final currencyFormatter = ref.watch(currencyFormatterProvider);
+    final amount = currencyFormatter.fromBaseAmount(widget.expense.amount);
     return amount == amount.roundToDouble()
         ? amount.toStringAsFixed(0)
-        : amount.toString();
+        : amount.toStringAsFixed(2); // keep it sane
   }
 
   @override
@@ -152,7 +154,10 @@ class _EditExpenseFormViewState extends ConsumerState<EditExpenseFormView> {
                     .submit(
                       original: widget.expense,
                       title: title,
-                      amount: amount,
+                      amount: ref
+                          .read(currencyFormatterProvider)
+                          .toBaseAmount(double.parse(amount))
+                          .toString(),
                       category: category,
                       date: date,
                       note: note,

@@ -1,10 +1,12 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/config/currency_config.dart';
 import '../../domain/usecases/expense_chart_data.dart';
 import '../../domain/usecases/month_navigation.dart';
+import '../providers/currency_preference_provider.dart';
 
 /// A compact bar chart of the last several months' totals, ending at the
 /// dashboard's selected month (highlighted). Purely a rendering of
@@ -13,13 +15,13 @@ import '../../domain/usecases/month_navigation.dart';
 ///
 /// Kept short and unobtrusive (a fixed, modest height) since its job is to
 /// show a trend at a glance, not to be the page's focal point.
-class MonthlySpendingChart extends StatelessWidget {
+class MonthlySpendingChart extends ConsumerWidget {
   const MonthlySpendingChart({super.key, required this.points});
 
   final List<MonthlySpendingPoint> points;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
 
     if (points.isEmpty || points.every((p) => p.total <= 0)) {
@@ -96,7 +98,7 @@ class MonthlySpendingChart extends StatelessWidget {
               getTooltipItem: (group, groupIndex, rod, rodIndex) =>
                   BarTooltipItem(
                     '${DateFormat.yMMM().format(points[group.x.toInt()].month)}\n'
-                    '${CurrencyConfig.defaultCurrency.format(rod.toY)}',
+                    '${ref.watch(currencyFormatterProvider).format(rod.toY)}',
                     theme.textTheme.bodySmall!.copyWith(
                       color: theme.colorScheme.onInverseSurface,
                     ),

@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../core/config/currency_config.dart';
 import '../../core/constants/app_spacing.dart';
 import '../../domain/entities/expense.dart';
+import '../providers/currency_preference_provider.dart';
 import '../providers/expense_providers.dart';
 import 'category_selector.dart';
 
@@ -93,7 +94,9 @@ class ExpenseListItem extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    CurrencyConfig.defaultCurrency.format(expense.amount),
+                    ref
+                        .watch(currencyFormatterProvider)
+                        .format(expense.amount),
                     style: theme.textTheme.titleMedium,
                   ),
                   Row(

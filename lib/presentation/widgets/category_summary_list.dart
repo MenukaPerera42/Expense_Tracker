@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/config/currency_config.dart';
 import '../../core/constants/app_spacing.dart';
 import '../../domain/entities/expense_category.dart';
+import '../providers/currency_preference_provider.dart';
 import 'category_selector.dart';
 
 /// A per-category breakdown of the selected month's spending: each
@@ -10,7 +12,7 @@ import 'category_selector.dart';
 /// highest-spend first. Doubles as the legend for [CategoryPieChart] — same
 /// per-category colors, exact figures the pie chart's slices don't have
 /// room to print.
-class CategorySummaryList extends StatelessWidget {
+class CategorySummaryList extends ConsumerWidget {
   const CategorySummaryList({
     super.key,
     required this.categoryTotals,
@@ -21,7 +23,7 @@ class CategorySummaryList extends StatelessWidget {
   final double total;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final entries = categoryTotals.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
 
@@ -77,7 +79,7 @@ class _CategoryRow extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    CurrencyConfig.defaultCurrency.format(amount),
+                    ref.watch(currencyFormatterProvider).format(amount),
                     style: theme.textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
