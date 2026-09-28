@@ -691,3 +691,13 @@ instruction not to rely on UI restrictions.
   doc-only cross-references in `ExpenseValidation`, and added the new
   `firestore-tests/`/`docs/security-model.md` documentation — no Dart
   application code, data flow, or repository behavior changed.
+
+## AI Tools Used
+
+In alignment with modern development practices, I leveraged several AI tools to accelerate development, improve code quality, and refine the user experience:
+
+* **OpenAI Codex & Claude:** Used during the initial phases to establish the app foundation and layered architecture (Riverpod, Domain/Data layers). I iteratively built and refined the core logic, state management, and Firebase integration with their assistance.
+* **Gemini (Antigravity) & Claude:** Utilized extensively during the UI/UX implementation and polishing phase. They helped streamline responsive layouts, implement Material 3 design patterns, and refine visual consistency (such as empty states and skeleton loaders).
+* **Codex & Gemini (Antigravity):** Used for final code reviews, identifying edge cases in validation, hardening Firestore security rules, and ensuring robust test coverage.
+
+Using these tools allowed me to focus heavily on the overall architecture, problem-solving, and UX decisions while accelerating boilerplate generation and debugging.
