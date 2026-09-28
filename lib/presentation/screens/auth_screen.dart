@@ -43,6 +43,12 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     }
   }
 
+  void _signInWithGoogle() {
+    if (ref.read(authActionProvider).isLoading) return;
+    FocusScope.of(context).unfocus();
+    ref.read(authActionProvider.notifier).signInWithGoogle();
+  }
+
   @override
   Widget build(BuildContext context) {
     final action = ref.watch(authActionProvider);
@@ -122,7 +128,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                         onFieldSubmitted: widget.register
                             ? null
                             : (_) => _submit(),
-                        validator: AuthValidation.password,
+                        validator: widget.register
+                            ? AuthValidation.password
+                            : AuthValidation.loginPassword,
                       ),
                       if (widget.register) ...[
                         const SizedBox(height: AppSpacing.medium),
@@ -172,6 +180,27 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                                 ),
                               )
                             : Text(title),
+                      ),
+                      const SizedBox(height: AppSpacing.medium),
+                      Row(
+                        children: [
+                          const Expanded(child: Divider()),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.medium,
+                            ),
+                            child: Text(
+                              'or',
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                          ),
+                          const Expanded(child: Divider()),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.medium),
+                      OutlinedButton(
+                        onPressed: action.isLoading ? null : _signInWithGoogle,
+                        child: const Text('Continue with Google'),
                       ),
                       TextButton(
                         onPressed: action.isLoading

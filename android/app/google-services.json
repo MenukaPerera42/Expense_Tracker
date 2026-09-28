@@ -12,7 +12,20 @@
           "package_name": "com.menuka.expense_tracker"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "137132762852-bjo2ijnmv2a5dnsmrgbnbvc7urrdtilo.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.menuka.expense_tracker",
+            "certificate_hash": "105172865ed7be7f7df1d24ae10eb51b3c8d0052"
+          }
+        },
+        {
+          "client_id": "137132762852-c3os6fqfe8og1ngnadnvoru5qmevj4np.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyDxZCoW3cuqdRXHQulNTm-u7HjGbsOzYRM"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "137132762852-c3os6fqfe8og1ngnadnvoru5qmevj4np.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

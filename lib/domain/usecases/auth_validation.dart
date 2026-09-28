@@ -8,9 +8,20 @@ abstract final class AuthValidation {
     return null;
   }
 
+  static String? loginPassword(String? value) {
+    if (value == null || value.isEmpty) return 'Enter your password.';
+    return null;
+  }
+
   static String? password(String? value) {
     if (value == null || value.isEmpty) return 'Enter your password.';
-    if (value.length < 6) return 'Use at least 6 characters.';
+    if (value.length < 8 ||
+        !RegExp(r'[A-Z]').hasMatch(value) ||
+        !RegExp(r'[a-z]').hasMatch(value) ||
+        !RegExp(r'[0-9]').hasMatch(value) ||
+        !RegExp(r'[^A-Za-z0-9\s]').hasMatch(value)) {
+      return 'Use 8+ characters with uppercase, lowercase, a number, and a symbol.';
+    }
     return null;
   }
 

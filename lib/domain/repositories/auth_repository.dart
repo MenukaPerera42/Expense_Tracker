@@ -3,6 +3,7 @@ import '../entities/auth_user.dart';
 abstract interface class AuthRepository {
   Stream<AuthUser?> watchUser();
   Future<void> login({required String email, required String password});
+  Future<void> signInWithGoogle();
   Future<void> register({
     required String name,
     required String email,
@@ -21,4 +22,5 @@ abstract interface class AuthRepository {
     required String newPassword,
   });
   Future<void> refreshUser();
+  Future<void> sendEmailVerification();
 }

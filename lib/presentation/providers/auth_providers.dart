@@ -29,10 +29,14 @@ class AuthController extends Notifier<AsyncValue<void>> {
 
   Future<void> login(String email, String password) =>
       _run((repo) => repo.login(email: email, password: password));
+  Future<void> signInWithGoogle() => _run((repo) => repo.signInWithGoogle());
   Future<void> register(String name, String email, String password) => _run(
     (repo) => repo.register(name: name, email: email, password: password),
   );
   Future<void> logout() => _run((repo) => repo.logout());
+  Future<void> sendEmailVerification() =>
+      _run((repo) => repo.sendEmailVerification());
+  Future<void> refreshUser() => _run((repo) => repo.refreshUser());
   Future<void> _run(Future<void> Function(AuthRepository) action) async {
     if (state.isLoading) return;
     state = const AsyncLoading();

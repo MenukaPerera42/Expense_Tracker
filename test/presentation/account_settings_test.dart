@@ -119,6 +119,22 @@ void main() {
       expect(find.byType(TextFormField), findsNothing);
     },
   );
+  testWidgets('Google-only account does not show change password', (
+    tester,
+  ) async {
+    await mount(
+      tester,
+      users: Stream.value(
+        const AuthUser(
+          id: 'google-user',
+          email: 'google@example.com',
+          hasPasswordProvider: false,
+        ),
+      ),
+    );
+
+    expect(find.text('Change password'), findsNothing);
+  });
 
   testWidgets(
     'profile events update the displayed name without reopening Settings',
@@ -209,7 +225,7 @@ void main() {
       await mount(tester);
       await open(tester, 'Change password');
       await fill(tester, 'Current password', 'old-secret');
-      await fill(tester, 'New password', 'new-secret');
+      await fill(tester, 'New password', 'NewSecret123!');
       await fill(tester, 'Confirm new password', 'mismatch');
       await submit(tester);
       expect(find.text('Passwords do not match.'), findsOneWidget);
@@ -233,12 +249,12 @@ void main() {
             .obscureText,
         isFalse,
       );
-      await fill(tester, 'Confirm new password', 'new-secret');
+      await fill(tester, 'Confirm new password', 'NewSecret123!');
       await submit(tester);
       verify(
         () => repository.changePassword(
           currentPassword: 'old-secret',
-          newPassword: 'new-secret',
+          newPassword: 'NewSecret123!',
         ),
       ).called(1);
       expect(find.text('Password updated.'), findsOneWidget);

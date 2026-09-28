@@ -35,15 +35,16 @@ class AccountSettingsTiles extends ConsumerWidget {
           title: const Text('Email address'),
           subtitle: Text(user?.email ?? 'Your sign-in email'),
         ),
-        ListTile(
-          leading: const Icon(Icons.lock_outline),
-          title: const Text('Change password'),
-          subtitle: const Text('Keep your account secure'),
-          trailing: const Icon(Icons.chevron_right),
-          onTap: enabled
-              ? () => _edit(context, ref, user, AccountSetting.password)
-              : null,
-        ),
+        if (user?.hasPasswordProvider ?? false)
+          ListTile(
+            leading: const Icon(Icons.lock_outline),
+            title: const Text('Change password'),
+            subtitle: const Text('Keep your account secure'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: enabled
+                ? () => _edit(context, ref, user, AccountSetting.password)
+                : null,
+          ),
         Align(
           alignment: Alignment.centerLeft,
           child: TextButton.icon(

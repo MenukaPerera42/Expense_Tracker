@@ -43,6 +43,17 @@ class FakeAuthRepository implements AuthRepository {
   }
 
   @override
+  Future<void> signInWithGoogle() async {
+    _currentUser = const AuthUser(
+      id: 'test-google-user',
+      email: 'google@example.com',
+      name: 'Google User',
+      hasPasswordProvider: false,
+    );
+    _controller.add(_currentUser);
+  }
+
+  @override
   Future<void> register({
     required String name,
     required String email,
@@ -61,7 +72,12 @@ class FakeAuthRepository implements AuthRepository {
   @override
   Future<void> updateName(String name) async {
     final user = _currentUser!;
-    _currentUser = AuthUser(id: user.id, name: name.trim(), email: user.email);
+    _currentUser = AuthUser(
+      id: user.id,
+      name: name.trim(),
+      email: user.email,
+      hasPasswordProvider: user.hasPasswordProvider,
+    );
     _controller.add(_currentUser);
   }
 
@@ -77,6 +93,8 @@ class FakeAuthRepository implements AuthRepository {
   }) async {}
   @override
   Future<void> refreshUser() async => _controller.add(_currentUser);
+  @override
+  Future<void> sendEmailVerification() async {}
 
   void dispose() {
     _controller.close();

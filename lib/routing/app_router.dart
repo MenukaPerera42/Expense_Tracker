@@ -12,6 +12,7 @@ import '../presentation/screens/edit_expense_screen.dart';
 import '../presentation/screens/expense_history_screen.dart';
 import '../presentation/screens/settings_screen.dart';
 import '../presentation/screens/splash_screen.dart';
+import '../presentation/screens/verify_email_screen.dart';
 import '../presentation/widgets/status_view.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -35,8 +36,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       }
       final authPage = path == '/login' || path == '/register';
       if (auth.value == null) return authPage ? null : '/login';
+      if (auth.value!.requiresEmailVerification) {
+        return path == '/verify-email' ? null : '/verify-email';
+      }
       if (authPage && ref.read(authActionProvider).isLoading) return null;
-      return authPage || path == '/splash' ? AppRouter.homePath : null;
+      return authPage || path == '/splash' || path == '/verify-email'
+          ? AppRouter.homePath
+          : null;
     },
     routes: [
       GoRoute(path: '/splash', builder: (_, _) => const SplashScreen()),
@@ -49,12 +55,19 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (_, _) =>
             const AuthScreen(key: ValueKey('register'), register: true),
       ),
+      GoRoute(
+        path: '/verify-email',
+        builder: (_, _) => const VerifyEmailScreen(),
+      ),
 
       // ── Shell: all authenticated screens share the persistent nav bar ──
       ShellRoute(
         builder: (context, state, child) {
           final auth = ref.read(authStateProvider);
-          if (auth.isLoading || auth.hasError || auth.value == null) {
+          if (auth.isLoading ||
+              auth.hasError ||
+              auth.value == null ||
+              auth.value!.requiresEmailVerification) {
             return const SplashScreen();
           }
           return _AppShell(location: state.uri.path, child: child);

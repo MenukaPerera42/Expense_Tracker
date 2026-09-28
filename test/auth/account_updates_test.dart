@@ -31,6 +31,7 @@ void main() {
     when(() => auth.currentUser).thenReturn(user);
     when(() => user.uid).thenReturn('u');
     when(() => user.email).thenReturn('old@example.com');
+    when(() => user.providerData).thenReturn([]);
     when(() => user.reauthenticateWithCredential(any()))
         .thenAnswer((_) async => _Credential());
     when(() => user.updateDisplayName(any())).thenAnswer((_) async {});
@@ -71,12 +72,29 @@ void main() {
   test('password is updated after reauthentication without trimming', () async {
     await repository.changePassword(
       currentPassword: 'old-password',
-      newPassword: ' new password ',
+      newPassword: ' NewPassword123! ',
     );
     verifyInOrder([
       () => user.reauthenticateWithCredential(any()),
-      () => user.updatePassword(' new password '),
+      () => user.updatePassword(' NewPassword123! '),
     ]);
+  });
+
+  test('weak new password is rejected before reauthentication', () async {
+    await expectLater(
+      repository.changePassword(
+        currentPassword: 'old-password',
+        newPassword: 'weak',
+      ),
+      throwsA(
+        isA<AppException>().having(
+          (e) => e.code,
+          'code',
+          AppErrorCode.weakPassword,
+        ),
+      ),
+    );
+    verifyNever(() => user.reauthenticateWithCredential(any()));
   });
 
   test(
@@ -95,7 +113,7 @@ void main() {
         ),
         () => repository.changePassword(
           currentPassword: 'wrong',
-          newPassword: 'new-password',
+          newPassword: 'NewPassword123!',
         ),
       ]) {
         await expectLater(
@@ -124,7 +142,7 @@ void main() {
     await expectLater(
       repository.changePassword(
         currentPassword: 'old',
-        newPassword: 'new-password',
+        newPassword: 'NewPassword123!',
       ),
       throwsA(
         isA<AppException>().having(
@@ -174,6 +192,7 @@ void main() {
       when(() => updated.uid).thenReturn('u');
       when(() => updated.email).thenReturn('new@gmail.com');
       when(() => updated.displayName).thenReturn('After');
+      when(() => updated.providerData).thenReturn([]);
       when(auth.userChanges)
           .thenAnswer((_) => Stream.fromIterable([user, updated]));
       final events = await repository.watchUser().toList();

@@ -58,13 +58,23 @@ void main() {
   test('password and confirmation validate without trimming credentials', () {
     expect(AuthValidation.password(''), isNotNull);
     expect(AuthValidation.password('12345'), isNotNull);
-    expect(AuthValidation.password('123456'), isNull);
+    expect(AuthValidation.password('123456'), isNotNull);
+    for (final value in [
+      'lowercase123!',
+      'UPPERCASE123!',
+      'NoNumber!',
+      'NoSymbol123',
+    ]) {
+      expect(AuthValidation.password(value), isNotNull);
+    }
+    expect(AuthValidation.password('Secret123!'), isNull);
+    expect(AuthValidation.loginPassword('oldpass'), isNull);
     expect(AuthValidation.confirmPassword('', 'secret'), isNotNull);
     expect(AuthValidation.confirmPassword('secret ', 'secret'), isNotNull);
     expect(AuthValidation.confirmPassword('secret', 'secret'), isNull);
     expect(AuthValidation.name('  '), isNotNull);
   });
-  for (final operation in ['login', 'register', 'logout']) {
+  for (final operation in ['login', 'register', 'google', 'logout']) {
     for (final success in [true, false]) {
       test(
         '$operation ${success ? 'success' : 'failure'} exposes loading and completion',
@@ -81,6 +91,7 @@ void main() {
             ),
           ).thenAnswer((_) => done.future);
           when(repo.logout).thenAnswer((_) => done.future);
+          when(repo.signInWithGoogle).thenAnswer((_) => done.future);
           final container = ProviderContainer(
             overrides: [
               authRepositoryProvider.overrideWith((ref) async => repo),
@@ -91,6 +102,7 @@ void main() {
           final pending = switch (operation) {
             'login' => controller.login('a@b.com', 'secret'),
             'register' => controller.register('Alex', 'a@b.com', 'secret'),
+            'google' => controller.signInWithGoogle(),
             _ => controller.logout(),
           };
           expect(container.read(authActionProvider).isLoading, isTrue);
@@ -173,23 +185,23 @@ void main() {
       await tester.pump();
       await tester.pump();
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
-      expect(find.text('Expense Tracker'), findsNothing);
+      expect(find.text('Home'), findsNothing);
       stream.add(null);
       await tester.pumpAndSettle();
       expect(find.text('Sign in'), findsNWidgets(2));
       container.read(appRouterProvider).go('/');
       await tester.pumpAndSettle();
-      expect(find.text('Expense Tracker'), findsNothing);
+      expect(find.text('Home'), findsNothing);
       stream.add(const AuthUser(id: 'one'));
       await tester.pumpAndSettle();
-      expect(find.text('Expense Tracker'), findsOneWidget);
+      expect(find.text('Home'), findsOneWidget);
       container.read(appRouterProvider).go('/register');
       await tester.pumpAndSettle();
       expect(find.text('Create account'), findsNothing);
       stream.addError(StateError('private'));
       await tester.pumpAndSettle();
       expect(find.text('Unable to start'), findsOneWidget);
-      expect(find.text('Expense Tracker'), findsNothing);
+      expect(find.text('Home'), findsNothing);
     },
   );
   testWidgets(
@@ -206,13 +218,13 @@ void main() {
       await tester.pump();
       stream.add(const AuthUser(id: 'restored'));
       await tester.pumpAndSettle();
-      expect(find.byTooltip('Sign out'), findsOneWidget);
-      await tester.tap(find.byTooltip('Sign out'));
+      expect(find.text('Home'), findsOneWidget);
+      await container.read(authActionProvider.notifier).logout();
       await tester.pumpAndSettle();
       expect(find.text('Sign in'), findsNWidgets(2));
       container.read(appRouterProvider).go('/');
       await tester.pumpAndSettle();
-      expect(find.byTooltip('Sign out'), findsNothing);
+      expect(find.text('Home'), findsNothing);
       verify(repo.logout).called(1);
     },
   );
@@ -258,7 +270,7 @@ void main() {
         () => repo.register(
           name: 'Alex',
           email: 'alex@example.com',
-          password: 'secret',
+          password: 'Secret123!',
         ),
       ).thenAnswer((_) async {});
       await mount(tester, repo);
@@ -269,7 +281,7 @@ void main() {
       for (final entry in [
         'Alex',
         'alex@example.com',
-        'secret',
+        'Secret123!',
         'wrong',
       ].asMap().entries) {
         await tester.enterText(fields.at(entry.key), entry.value);
@@ -278,7 +290,7 @@ void main() {
       await tester.tap(find.byType(FilledButton));
       await tester.pumpAndSettle();
       expect(find.text('Passwords do not match.'), findsOneWidget);
-      await tester.enterText(fields.at(3), 'secret');
+      await tester.enterText(fields.at(3), 'Secret123!');
       await tester.ensureVisible(find.byType(FilledButton));
       await tester.tap(find.byType(FilledButton));
       await tester.pumpAndSettle();
@@ -286,9 +298,83 @@ void main() {
         () => repo.register(
           name: 'Alex',
           email: 'alex@example.com',
-          password: 'secret',
+          password: 'Secret123!',
         ),
       ).called(1);
+    },
+  );
+  for (final register in [false, true]) {
+    testWidgets(
+      'Google button on ${register ? 'create account' : 'sign in'} bypasses form validation',
+      (tester) async {
+        final repo = MockRepository();
+        when(repo.watchUser).thenAnswer((_) => Stream.value(null));
+        when(repo.signInWithGoogle).thenAnswer((_) async {});
+        await mount(tester, repo);
+        await tester.pumpAndSettle();
+        if (register) {
+          await tester.tap(find.text('Create an account'));
+          await tester.pumpAndSettle();
+        }
+
+        await tester.tap(find.text('Continue with Google'));
+        await tester.pumpAndSettle();
+
+        verify(repo.signInWithGoogle).called(1);
+        expect(find.text('Enter your email address.'), findsNothing);
+      },
+    );
+  }
+  testWidgets(
+    'new password account stays on verification page until refreshed',
+    (tester) async {
+      final repo = MockRepository();
+      final users = StreamController<AuthUser?>();
+      addTearDown(users.close);
+      when(repo.watchUser).thenAnswer((_) => users.stream);
+      when(
+        () => repo.register(
+          name: 'Alex',
+          email: 'alex@example.com',
+          password: 'Secret123!',
+        ),
+      ).thenAnswer((_) async {
+        users.add(
+          const AuthUser(
+            id: 'new-user',
+            email: 'alex@example.com',
+            requiresEmailVerification: true,
+          ),
+        );
+      });
+      when(repo.sendEmailVerification).thenAnswer((_) async {});
+      when(repo.refreshUser).thenAnswer((_) async {
+        users.add(const AuthUser(id: 'new-user', email: 'alex@example.com'));
+      });
+      final container = await mount(tester, repo);
+      users.add(null);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Create an account'));
+      await tester.pumpAndSettle();
+      final fields = find.byType(TextFormField);
+      await tester.enterText(fields.at(0), 'Alex');
+      await tester.enterText(fields.at(1), 'alex@example.com');
+      await tester.enterText(fields.at(2), 'Secret123!');
+      await tester.enterText(fields.at(3), 'Secret123!');
+      await tester.tap(find.widgetWithText(FilledButton, 'Create account'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Verify your email'), findsOneWidget);
+      expect(find.text('Home'), findsNothing);
+      container.read(appRouterProvider).go('/settings');
+      await tester.pumpAndSettle();
+      expect(find.text('Verify your email'), findsOneWidget);
+      await tester.tap(find.text('Resend verification email'));
+      await tester.pumpAndSettle();
+      verify(repo.sendEmailVerification).called(1);
+      await tester.tap(find.text("I've verified my email"));
+      await tester.pumpAndSettle();
+      expect(find.text('Home'), findsOneWidget);
     },
   );
 }

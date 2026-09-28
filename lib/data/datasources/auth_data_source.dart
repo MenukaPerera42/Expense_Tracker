@@ -1,12 +1,42 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 import '../services/firebase_error_mapper.dart';
 import '../../core/errors/app_exception.dart';
 
 /// SDK boundary. Feature repositories will map User into domain entities.
 class AuthDataSource {
-  AuthDataSource(this._auth);
+  AuthDataSource(this._auth, {Future<String?> Function()? googleIdToken})
+    : _googleIdToken = googleIdToken ?? _getGoogleIdToken;
   final FirebaseAuth _auth;
+  final Future<String?> Function() _googleIdToken;
+  static Future<void>? _googleInitialization;
+
+  static Future<String?> _getGoogleIdToken() async {
+    _googleInitialization ??= GoogleSignIn.instance.initialize();
+    try {
+      await _googleInitialization;
+      final account = await GoogleSignIn.instance.authenticate();
+      final idToken = account.authentication.idToken;
+      if (idToken == null || idToken.isEmpty) {
+        throw const AppException(
+          AppErrorCode.configuration,
+          'Google sign-in is not configured. Please try again later.',
+        );
+      }
+      return idToken;
+    } on GoogleSignInException catch (error) {
+      if (error.code == GoogleSignInExceptionCode.canceled) return null;
+      throw AppException(
+        error.code == GoogleSignInExceptionCode.clientConfigurationError ||
+                error.code ==
+                    GoogleSignInExceptionCode.providerConfigurationError
+            ? AppErrorCode.configuration
+            : AppErrorCode.unknown,
+        'Google sign-in is unavailable. Please try again.',
+      );
+    }
+  }
 
   User? get currentUser => _auth.currentUser;
   Stream<User?> authStateChanges() =>
@@ -20,6 +50,22 @@ class AuthDataSource {
       password: password,
     ),
   );
+  Future<UserCredential?> signInWithGoogle() async {
+    final idToken = await _googleIdToken();
+    if (idToken == null) return null; // The account picker was dismissed.
+    if (idToken.isEmpty) {
+      throw const AppException(
+        AppErrorCode.configuration,
+        'Google sign-in is not configured. Please try again later.',
+      );
+    }
+    return FirebaseErrorMapper.guard(
+      () => _auth.signInWithCredential(
+        GoogleAuthProvider.credential(idToken: idToken),
+      ),
+    );
+  }
+
   Future<UserCredential> register({
     required String email,
     required String password,
@@ -128,5 +174,13 @@ class AuthDataSource {
     final user = _requireUser();
     await user.reload();
     _checkSession(user);
+  });
+
+  Future<void> sendEmailVerification() => FirebaseErrorMapper.guard(() async {
+    final user = _requireUser();
+    if (!user.emailVerified) {
+      await user.sendEmailVerification();
+      _checkSession(user);
+    }
   });
 }
