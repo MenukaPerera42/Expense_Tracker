@@ -140,6 +140,7 @@ class _AppearanceTile extends ConsumerWidget {
                           child: Container(
                             constraints: const BoxConstraints(minHeight: 44),
                             padding: const EdgeInsets.symmetric(vertical: 10),
+                            alignment: Alignment.center,
                             child: Wrap(
                               alignment: WrapAlignment.center,
                               crossAxisAlignment: WrapCrossAlignment.center,
