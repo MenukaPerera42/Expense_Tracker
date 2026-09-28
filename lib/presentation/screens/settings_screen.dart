@@ -117,7 +117,7 @@ class _AppearanceTile extends ConsumerWidget {
                       borderRadius: BorderRadius.circular(18),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF0D47A1).withOpacity(0.35),
+                          color: const Color(0xFF0D47A1).withValues(alpha: 0.35),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),

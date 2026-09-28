@@ -659,7 +659,7 @@ class _SectionHeader extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Flexible(child: Text(title, style: tt.titleMedium)),
-        if (trailing != null) trailing!,
+        ?trailing,
       ],
     );
   }

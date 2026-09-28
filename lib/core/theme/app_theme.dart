@@ -17,10 +17,12 @@ abstract final class AppTheme {
       seedColor: _seedColor,
       brightness: brightness,
       surface: isDark ? const Color(0xFF0D1B2A) : const Color(0xFFF2F5FA),
-      surfaceContainerLow:
-          isDark ? const Color(0xFF152236) : const Color(0xFFFFFFFF),
-      surfaceContainerHighest:
-          isDark ? const Color(0xFF1E3048) : const Color(0xFFDCE8F8),
+      surfaceContainerLow: isDark
+          ? const Color(0xFF152236)
+          : const Color(0xFFFFFFFF),
+      surfaceContainerHighest: isDark
+          ? const Color(0xFF1E3048)
+          : const Color(0xFFDCE8F8),
     );
 
     // Poppins base text theme
@@ -166,8 +168,14 @@ abstract final class AppTheme {
         focusedErrorBorder: border.copyWith(
           borderSide: BorderSide(color: colors.error, width: 1.5),
         ),
-        labelStyle: GoogleFonts.poppins(fontSize: 14, color: colors.onSurfaceVariant),
-        hintStyle: GoogleFonts.poppins(fontSize: 14, color: colors.onSurfaceVariant),
+        labelStyle: GoogleFonts.poppins(
+          fontSize: 14,
+          color: colors.onSurfaceVariant,
+        ),
+        hintStyle: GoogleFonts.poppins(
+          fontSize: 14,
+          color: colors.onSurfaceVariant,
+        ),
         errorMaxLines: 3,
       ),
       filledButtonTheme: FilledButtonThemeData(style: buttonStyle),

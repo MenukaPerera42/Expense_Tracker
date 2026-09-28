@@ -96,8 +96,8 @@ void main() {
     await mount(tester);
 
     final totalCard = find.ancestor(
-      of: find.text('Total spending'),
-      matching: find.byType(Card),
+      of: find.text('Total Spending'),
+      matching: find.byType(Container),
     );
     expect(
       find.descendant(
@@ -208,8 +208,8 @@ void main() {
     expect(find.text('Last month'), findsOneWidget);
     expect(find.text('This month'), findsNothing);
     final totalCard = find.ancestor(
-      of: find.text('Total spending'),
-      matching: find.byType(Card),
+      of: find.text('Total Spending'),
+      matching: find.byType(Container),
     );
     expect(
       find.descendant(

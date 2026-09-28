@@ -199,8 +199,8 @@ class _PersistentNavBar extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final navBg = isDark ? const Color(0xFF152236) : Colors.white;
     final shadowColor = isDark
-        ? Colors.black.withOpacity(0.40)
-        : Colors.black.withOpacity(0.09);
+        ? Colors.black.withValues(alpha: 0.40)
+        : Colors.black.withValues(alpha: 0.09);
 
     return SafeArea(
       bottom: false, // Extend to the absolute bottom edge
@@ -235,7 +235,7 @@ class _PersistentNavBar extends StatelessWidget {
                 ),
                 if (!isDark)
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
+                    color: Colors.black.withValues(alpha: 0.04),
                     blurRadius: 1,
                     offset: const Offset(0, -1),
                   ),
@@ -297,8 +297,8 @@ class _PersistentNavBar extends StatelessWidget {
                   boxShadow: [
                     BoxShadow(
                       color: isDark
-                          ? Colors.white.withOpacity(0.06)
-                          : const Color(0xFF0D47A1).withOpacity(0.4),
+                          ? Colors.white.withValues(alpha: 0.06)
+                          : const Color(0xFF0D47A1).withValues(alpha: 0.4),
                       blurRadius: isDark ? 8 : 12,
                       offset: isDark ? const Offset(0, 2) : const Offset(0, 4),
                     ),

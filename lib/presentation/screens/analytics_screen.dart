@@ -21,7 +21,7 @@ class AnalyticsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final summaryAsync = ref.watch(monthlyExpenseSummaryProvider);
     final timeframe = ref.watch(analyticsTimeframeProvider);
-    
+
     final AsyncValue<List<SpendingPoint>> pointsAsync = switch (timeframe) {
       ChartTimeframe.day => ref.watch(dailySpendingChartProvider),
       ChartTimeframe.week => ref.watch(weeklySpendingChartProvider),
@@ -43,14 +43,21 @@ class AnalyticsScreen extends ConsumerWidget {
           ),
         ),
       ),
-      data: (summary) =>
-          _AnalyticsBody(summary: summary, pointsAsync: pointsAsync, timeframe: timeframe),
+      data: (summary) => _AnalyticsBody(
+        summary: summary,
+        pointsAsync: pointsAsync,
+        timeframe: timeframe,
+      ),
     );
   }
 }
 
 class _AnalyticsBody extends ConsumerWidget {
-  const _AnalyticsBody({required this.summary, required this.pointsAsync, required this.timeframe});
+  const _AnalyticsBody({
+    required this.summary,
+    required this.pointsAsync,
+    required this.timeframe,
+  });
 
   final MonthlyExpenseSummary summary;
   final AsyncValue<List<SpendingPoint>> pointsAsync;
@@ -93,8 +100,8 @@ class _AnalyticsBody extends ConsumerWidget {
               subtitle: timeframe == ChartTimeframe.day
                   ? 'Daily breakdown'
                   : timeframe == ChartTimeframe.week
-                      ? 'Weekly breakdown'
-                      : 'Last 6 months',
+                  ? 'Weekly breakdown'
+                  : 'Last 6 months',
             ),
             _CreativeTimeframeToggle(
               current: timeframe,
@@ -145,7 +152,6 @@ class _SummaryRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     double topAmount = 0;
     ExpenseCategory? topCat;
     for (final e in summary.categoryTotals.entries) {
@@ -320,7 +326,9 @@ class _TrendCard extends StatelessWidget {
                           }
                           final pt = points[i];
                           if (pt is DailySpendingPoint) {
-                            if (pt.day % 5 != 0 && pt.day != 1 && pt.day != points.length) {
+                            if (pt.day % 5 != 0 &&
+                                pt.day != 1 &&
+                                pt.day != points.length) {
                               return const SizedBox.shrink();
                             }
                             return Padding(
@@ -344,7 +352,9 @@ class _TrendCard extends StatelessWidget {
                       getTooltipColor: (_) => cs.inverseSurface,
                       getTooltipItem: (group, groupIndex, rod, rodIndex) {
                         final pt = points[group.x.toInt()];
-                        final dayStr = pt is DailySpendingPoint ? 'Day ${pt.day}\n' : '';
+                        final dayStr = pt is DailySpendingPoint
+                            ? 'Day ${pt.day}\n'
+                            : '';
                         return BarTooltipItem(
                           '$dayStr${CurrencyConfig.defaultCurrency.format(rod.toY)}',
                           tt.labelSmall!.copyWith(
@@ -362,7 +372,9 @@ class _TrendCard extends StatelessWidget {
                       barRods: [
                         BarChartRodData(
                           toY: entry.value.total,
-                          color: isHighlighted ? cs.primary : cs.outlineVariant.withValues(alpha: 0.3),
+                          color: isHighlighted
+                              ? cs.primary
+                              : cs.outlineVariant.withValues(alpha: 0.3),
                           width: points.length > 25 ? 5 : 8,
                           borderRadius: const BorderRadius.vertical(
                             top: Radius.circular(4),
@@ -419,12 +431,14 @@ class _TrendCard extends StatelessWidget {
                         if (i < 0 || i >= points.length) {
                           return const SizedBox.shrink();
                         }
-                        
+
                         String label = '';
                         final pt = points[i];
-                        if (timeframe == ChartTimeframe.week && pt is WeeklySpendingPoint) {
+                        if (timeframe == ChartTimeframe.week &&
+                            pt is WeeklySpendingPoint) {
                           label = 'W${pt.week}';
-                        } else if (timeframe == ChartTimeframe.month && pt is MonthlySpendingPoint) {
+                        } else if (timeframe == ChartTimeframe.month &&
+                            pt is MonthlySpendingPoint) {
                           label = DateFormat.MMM().format(pt.month);
                         }
 
@@ -444,24 +458,24 @@ class _TrendCard extends StatelessWidget {
                 lineTouchData: LineTouchData(
                   touchTooltipData: LineTouchTooltipData(
                     getTooltipColor: (_) => cs.inverseSurface,
-                    getTooltipItems: (spots) => spots
-                        .map(
-                          (s) {
-                            final pt = points[s.x.toInt()];
-                            String prefix = '';
-                            if (pt is WeeklySpendingPoint) prefix = 'Week ${pt.week}\n';
-                            if (pt is MonthlySpendingPoint) prefix = '${DateFormat.MMMM().format(pt.month)}\n';
-                            
-                            return LineTooltipItem(
-                              '$prefix${CurrencyConfig.defaultCurrency.format(s.y)}',
-                              tt.labelSmall!.copyWith(
-                                color: cs.onInverseSurface,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            );
-                          },
-                        )
-                        .toList(),
+                    getTooltipItems: (spots) => spots.map((s) {
+                      final pt = points[s.x.toInt()];
+                      String prefix = '';
+                      if (pt is WeeklySpendingPoint) {
+                        prefix = 'Week ${pt.week}\n';
+                      }
+                      if (pt is MonthlySpendingPoint) {
+                        prefix = '${DateFormat.MMMM().format(pt.month)}\n';
+                      }
+
+                      return LineTooltipItem(
+                        '$prefix${CurrencyConfig.defaultCurrency.format(s.y)}',
+                        tt.labelSmall!.copyWith(
+                          color: cs.onInverseSurface,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      );
+                    }).toList(),
                   ),
                 ),
                 lineBarsData: [
@@ -641,7 +655,8 @@ class _MonthChip extends ConsumerWidget {
           tooltip: 'Previous month',
           constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
           padding: EdgeInsets.zero,
-          onPressed: () => ref.read(selectedMonthProvider.notifier).previousMonth(),
+          onPressed: () =>
+              ref.read(selectedMonthProvider.notifier).previousMonth(),
           icon: Icon(Icons.chevron_left, size: 24, color: cs.primary),
         ),
         const SizedBox(width: 4),
@@ -681,9 +696,10 @@ class AnalyticsTimeframeController extends Notifier<ChartTimeframe> {
   void setTimeframe(ChartTimeframe t) => state = t;
 }
 
-final analyticsTimeframeProvider = NotifierProvider<AnalyticsTimeframeController, ChartTimeframe>(
-  AnalyticsTimeframeController.new,
-);
+final analyticsTimeframeProvider =
+    NotifierProvider<AnalyticsTimeframeController, ChartTimeframe>(
+      AnalyticsTimeframeController.new,
+    );
 
 // ─── Creative Timeframe Segmented Toggle ──────────────────────────────────────
 
@@ -760,10 +776,14 @@ class _CreativeTimeframeToggle extends StatelessWidget {
                               style: TextStyle(
                                 fontFamily: 'Poppins',
                                 fontSize: 12,
-                                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                fontWeight: isSelected
+                                    ? FontWeight.w700
+                                    : FontWeight.w500,
                                 color: isSelected
                                     ? Colors.white
-                                    : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
+                                    : (isDark
+                                          ? const Color(0xFF94A3B8)
+                                          : const Color(0xFF64748B)),
                               ),
                               child: Text(item.$2),
                             ),
@@ -781,4 +801,3 @@ class _CreativeTimeframeToggle extends StatelessWidget {
     );
   }
 }
-
