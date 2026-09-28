@@ -91,18 +91,11 @@ class _ExpenseSearchFieldState extends ConsumerState<ExpenseSearchField> {
               isDense: true,
               filled: false,
               hintText: 'Search title or note...',
-              hintStyle: TextStyle(
-                color: isDark
-                    ? const Color(0xFF94A3B8)
-                    : const Color(0xFF64748B),
-                fontSize: 14,
-              ),
+              hintStyle: TextStyle(color: cs.onSurfaceVariant, fontSize: 14),
               prefixIcon: Icon(
                 Icons.search_rounded,
                 size: 20,
-                color: isDark
-                    ? const Color(0xFF94A3B8)
-                    : const Color(0xFF0D47A1),
+                color: cs.onSurfaceVariant,
               ),
               suffixIcon: value.text.isEmpty
                   ? null
@@ -111,9 +104,7 @@ class _ExpenseSearchFieldState extends ConsumerState<ExpenseSearchField> {
                       icon: Icon(
                         Icons.cancel_rounded,
                         size: 18,
-                        color: isDark
-                            ? const Color(0xFF94A3B8)
-                            : const Color(0xFF64748B),
+                        color: cs.onSurfaceVariant,
                       ),
                       onPressed: _clear,
                     ),

@@ -637,9 +637,12 @@ class _MonthChip extends ConsumerWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        GestureDetector(
-          onTap: () => ref.read(selectedMonthProvider.notifier).previousMonth(),
-          child: Icon(Icons.chevron_left, size: 24, color: cs.primary),
+        IconButton(
+          tooltip: 'Previous month',
+          constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+          padding: EdgeInsets.zero,
+          onPressed: () => ref.read(selectedMonthProvider.notifier).previousMonth(),
+          icon: Icon(Icons.chevron_left, size: 24, color: cs.primary),
         ),
         const SizedBox(width: 4),
         Text(
@@ -650,11 +653,14 @@ class _MonthChip extends ConsumerWidget {
           ),
         ),
         const SizedBox(width: 4),
-        GestureDetector(
-          onTap: MonthNavigation.isCurrentMonth(month)
+        IconButton(
+          tooltip: 'Next month',
+          constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+          padding: EdgeInsets.zero,
+          onPressed: MonthNavigation.isCurrentMonth(month)
               ? null
               : () => ref.read(selectedMonthProvider.notifier).nextMonth(),
-          child: Icon(
+          icon: Icon(
             Icons.chevron_right,
             size: 24,
             color: MonthNavigation.isCurrentMonth(month)
@@ -739,23 +745,28 @@ class _CreativeTimeframeToggle extends StatelessWidget {
                 children: items.map((item) {
                   final isSelected = item.$1 == current;
                   return Expanded(
-                    child: GestureDetector(
-                      onTap: () => onChanged(item.$1),
-                      behavior: HitTestBehavior.opaque,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 6),
-                        child: Center(
-                          child: AnimatedDefaultTextStyle(
-                            duration: const Duration(milliseconds: 250),
-                            style: TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: 12,
-                              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                              color: isSelected
-                                  ? Colors.white
-                                  : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
+                    child: Semantics(
+                      button: true,
+                      selected: isSelected,
+                      child: InkWell(
+                        onTap: () => onChanged(item.$1),
+                        borderRadius: BorderRadius.circular(16),
+                        child: Container(
+                          constraints: const BoxConstraints(minHeight: 44),
+                          padding: const EdgeInsets.symmetric(vertical: 6),
+                          child: Center(
+                            child: AnimatedDefaultTextStyle(
+                              duration: const Duration(milliseconds: 250),
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: 12,
+                                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                color: isSelected
+                                    ? Colors.white
+                                    : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
+                              ),
+                              child: Text(item.$2),
                             ),
-                            child: Text(item.$2),
                           ),
                         ),
                       ),

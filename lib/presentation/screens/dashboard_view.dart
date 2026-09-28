@@ -46,8 +46,7 @@ class DashboardView extends ConsumerWidget {
             ),
           ),
         ),
-        data: (summary) =>
-            _DashboardBody(summary: summary, userName: userName),
+        data: (summary) => _DashboardBody(summary: summary, userName: userName),
       ),
     );
   }
@@ -63,8 +62,9 @@ class _DashboardBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final displayName =
-        (userName == null || userName!.trim().isEmpty) ? 'there' : userName!.trim();
+    final displayName = (userName == null || userName!.trim().isEmpty)
+        ? 'there'
+        : userName!.trim();
 
     return ListView(
       padding: const EdgeInsets.symmetric(
@@ -180,7 +180,6 @@ class _Header extends ConsumerWidget {
               Text(
                 displayName,
                 style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),
@@ -221,7 +220,7 @@ class _BalanceCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: isDark 
+            color: isDark
                 ? Colors.white.withValues(alpha: 0.05)
                 : const Color(0xFF0D47A1).withValues(alpha: 0.35),
             blurRadius: isDark ? 12 : 24,
@@ -277,11 +276,7 @@ class _BalanceCard extends StatelessWidget {
           // Transactions count
           Row(
             children: [
-              Icon(
-                Icons.receipt_long_rounded,
-                size: 16,
-                color: Colors.white60,
-              ),
+              Icon(Icons.receipt_long_rounded, size: 16, color: Colors.white60),
               const SizedBox(width: 6),
               Text(
                 summary.transactionCount == 1
@@ -291,31 +286,40 @@ class _BalanceCard extends StatelessWidget {
               ),
               const Spacer(),
               // Quick add button — routes to existing add screen
-              GestureDetector(
-                onTap: () => context.push(AppRouter.addExpensePath),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.18),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.add_rounded,
-                        color: Colors.white,
-                        size: 16,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Add',
-                        style: tt.labelSmall?.copyWith(color: Colors.white),
-                      ),
-                    ],
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () => context.push(AppRouter.addExpensePath),
+                  borderRadius: BorderRadius.circular(20),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    constraints: const BoxConstraints(
+                      minHeight: 44,
+                      minWidth: 44,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.add_rounded,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Add',
+                          style: tt.labelLarge?.copyWith(color: Colors.white),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -363,8 +367,9 @@ class _SpendingLineChart extends ConsumerWidget {
             );
           }
 
-          final maxVal =
-              points.map((p) => p.total).reduce((a, b) => a > b ? a : b);
+          final maxVal = points
+              .map((p) => p.total)
+              .reduce((a, b) => a > b ? a : b);
           final maxY = maxVal > 0 ? maxVal * 1.25 : 1.0;
           final spots = points
               .asMap()
@@ -376,9 +381,12 @@ class _SpendingLineChart extends ConsumerWidget {
             height: 170,
             child: LineChart(
               LineChartData(
-                minY: -maxVal * 0.05, // Slight padding below 0 to avoid bottom cropping
+                minY:
+                    -maxVal *
+                    0.05, // Slight padding below 0 to avoid bottom cropping
                 maxY: maxY,
-                clipData: const FlClipData.none(), // Don't crop dots at the edges
+                clipData:
+                    const FlClipData.none(), // Don't crop dots at the edges
                 gridData: FlGridData(
                   drawVerticalLine: false,
                   horizontalInterval: maxY / 4,
@@ -475,7 +483,6 @@ class _SpendingLineChart extends ConsumerWidget {
   }
 }
 
-
 // ─── Category rows ────────────────────────────────────────────────────────────
 
 class _CategoryRow extends StatelessWidget {
@@ -527,7 +534,10 @@ class _CategoryRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(category.displayName, style: tt.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
+                Text(
+                  category.displayName,
+                  style: tt.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+                ),
                 const SizedBox(height: 6),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(4),
@@ -610,16 +620,12 @@ class _TransactionRow extends StatelessWidget {
                   Text(
                     expense.title,
                     style: tt.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 2),
                   Text(
                     '${expense.category.displayName} · '
                     '${DateFormat.MMMd().format(expense.date.toLocal())}',
-                    style: tt.labelSmall?.copyWith(
-                      color: cs.onSurfaceVariant,
-                    ),
+                    style: tt.labelSmall?.copyWith(color: cs.onSurfaceVariant),
                   ),
                 ],
               ),
@@ -652,8 +658,8 @@ class _SectionHeader extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(title, style: tt.titleMedium),
-        ?trailing,
+        Flexible(child: Text(title, style: tt.titleMedium)),
+        if (trailing != null) trailing!,
       ],
     );
   }
@@ -670,21 +676,28 @@ class _MonthChip extends ConsumerWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        GestureDetector(
-          onTap: () => ref.read(selectedMonthProvider.notifier).previousMonth(),
-          child: Icon(Icons.chevron_left, size: 20, color: cs.onSurfaceVariant),
+        IconButton(
+          tooltip: 'Previous month',
+          constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+          padding: EdgeInsets.zero,
+          onPressed: () =>
+              ref.read(selectedMonthProvider.notifier).previousMonth(),
+          icon: Icon(Icons.chevron_left, size: 24, color: cs.onSurfaceVariant),
         ),
         Text(
           DateFormat.yMMM().format(month),
           style: tt.labelMedium?.copyWith(color: cs.onSurfaceVariant),
         ),
-        GestureDetector(
-          onTap: MonthNavigation.isCurrentMonth(month)
+        IconButton(
+          tooltip: 'Next month',
+          constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+          padding: EdgeInsets.zero,
+          onPressed: MonthNavigation.isCurrentMonth(month)
               ? null
               : () => ref.read(selectedMonthProvider.notifier).nextMonth(),
-          child: Icon(
+          icon: Icon(
             Icons.chevron_right,
-            size: 20,
+            size: 24,
             color: MonthNavigation.isCurrentMonth(month)
                 ? cs.onSurfaceVariant.withValues(alpha: 0.3)
                 : cs.onSurfaceVariant,

@@ -60,8 +60,6 @@ class ExpenseListItem extends ConsumerWidget {
                           child: Text(
                             expense.title,
                             style: theme.textTheme.titleMedium,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                         if (hasNote)

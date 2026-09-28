@@ -119,59 +119,67 @@ class CategoryPill extends StatelessWidget {
     final unselectedBorder = isDark
         ? const Color(0xFF334155)
         : const Color(0xFFCBD5E1);
-    final unselectedText = isDark
-        ? const Color(0xFF94A3B8)
-        : const Color(0xFF64748B);
+    final unselectedText = theme.colorScheme.onSurface;
 
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeOutCubic,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        decoration: BoxDecoration(
-          color: isSelected ? activeColor : unselectedBg,
+    return Semantics(
+      button: true,
+      selected: isSelected,
+      enabled: onTap != null,
+      label: category.displayName,
+      excludeSemantics: true,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isSelected ? activeColor : unselectedBorder,
-            width: 1.5,
-          ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: activeColor.withValues(alpha: 0.4),
-                    blurRadius: 8,
-                    offset: const Offset(0, 3),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeOutCubic,
+            constraints: const BoxConstraints(minHeight: 48, minWidth: 48),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: isSelected ? activeColor : unselectedBg,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isSelected ? activeColor : unselectedBorder,
+                width: 1.5,
+              ),
+              boxShadow: isSelected
+                  ? [
+                      BoxShadow(
+                        color: activeColor.withValues(alpha: 0.4),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      ),
+                    ]
+                  : null,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 200),
+                  transitionBuilder: (child, animation) =>
+                      ScaleTransition(scale: animation, child: child),
+                  child: Icon(
+                    iconForCategory(category),
+                    key: ValueKey(isSelected),
+                    size: 18,
+                    color: isSelected ? Colors.white : unselectedText,
                   ),
-                ]
-              : null,
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 200),
-              transitionBuilder: (child, animation) =>
-                  ScaleTransition(scale: animation, child: child),
-              child: Icon(
-                // Use rounded icons if available, otherwise regular
-                iconForCategory(category),
-                key: ValueKey(isSelected),
-                size: 18,
-                color: isSelected ? Colors.white : unselectedText,
-              ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  category.displayName,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                    color: isSelected ? Colors.white : unselectedText,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 8),
-            Text(
-              category.displayName,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                color: isSelected ? Colors.white : unselectedText,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );

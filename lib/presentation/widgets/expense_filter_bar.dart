@@ -316,9 +316,7 @@ class _HistoryFilterChip extends StatelessWidget {
     const active = Color(0xFF0D47A1);
     final foreground = selected
         ? Colors.white
-        : dark
-        ? const Color(0xFF94A3B8)
-        : const Color(0xFF64748B);
+        : Theme.of(context).colorScheme.onSurface;
     return InputChip(
       avatar: avatar,
       label: label,

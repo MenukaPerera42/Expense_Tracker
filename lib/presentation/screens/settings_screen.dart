@@ -129,49 +129,54 @@ class _AppearanceTile extends ConsumerWidget {
                   children: items.map((item) {
                     final isSelected = item.$1 == mode;
                     return Expanded(
-                      child: GestureDetector(
-                        onTap: () => ref
-                            .read(themeModeProvider.notifier)
-                            .setMode(item.$1),
-                        behavior: HitTestBehavior.opaque,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          child: Wrap(
-                            alignment: WrapAlignment.center,
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            runSpacing: 4,
-                            children: [
-                              AnimatedSwitcher(
-                                duration: const Duration(milliseconds: 250),
-                                child: Icon(
-                                  item.$2,
-                                  key: ValueKey(isSelected),
-                                  size: 16,
-                                  color: isSelected
-                                      ? Colors.white
-                                      : (isDark
-                                            ? const Color(0xFF94A3B8)
-                                            : const Color(0xFF64748B)),
+                      child: Semantics(
+                        button: true,
+                        selected: isSelected,
+                        child: InkWell(
+                          onTap: () => ref
+                              .read(themeModeProvider.notifier)
+                              .setMode(item.$1),
+                          borderRadius: BorderRadius.circular(20),
+                          child: Container(
+                            constraints: const BoxConstraints(minHeight: 44),
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            child: Wrap(
+                              alignment: WrapAlignment.center,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              runSpacing: 4,
+                              children: [
+                                AnimatedSwitcher(
+                                  duration: const Duration(milliseconds: 250),
+                                  child: Icon(
+                                    item.$2,
+                                    key: ValueKey(isSelected),
+                                    size: 16,
+                                    color: isSelected
+                                        ? Colors.white
+                                        : (isDark
+                                              ? const Color(0xFF94A3B8)
+                                              : const Color(0xFF64748B)),
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(width: 6),
-                              AnimatedDefaultTextStyle(
-                                duration: const Duration(milliseconds: 250),
-                                style: TextStyle(
-                                  fontFamily: 'Poppins',
-                                  fontSize: 13,
-                                  fontWeight: isSelected
-                                      ? FontWeight.w700
-                                      : FontWeight.w500,
-                                  color: isSelected
-                                      ? Colors.white
-                                      : (isDark
-                                            ? const Color(0xFF94A3B8)
-                                            : const Color(0xFF64748B)),
+                                const SizedBox(width: 6),
+                                AnimatedDefaultTextStyle(
+                                  duration: const Duration(milliseconds: 250),
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: 13,
+                                    fontWeight: isSelected
+                                        ? FontWeight.w700
+                                        : FontWeight.w500,
+                                    color: isSelected
+                                        ? Colors.white
+                                        : (isDark
+                                              ? const Color(0xFF94A3B8)
+                                              : const Color(0xFF64748B)),
+                                  ),
+                                  child: Text(item.$3),
                                 ),
-                                child: Text(item.$3),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                       ),
